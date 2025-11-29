@@ -1,0 +1,15 @@
+{
+    "data": {
+        "concatenated_csv": "data/concatenated/",
+        "useAllTickers": true
+    },
+    "features": {
+        "featureConfigPath": "financial_TSF/features/feature_config.json"
+    },
+    "pipeline": {
+        "steps": [
+            "DataLoadingStep",
+            "FeatureStep"
+        ]
+    }
+}
