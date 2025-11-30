@@ -7,6 +7,7 @@ from typing import Any, List
 class DataConfig:
     concatenated_csv: str
     use_all_tickers: bool
+    processed_csv: str
 
 
 @dataclass
@@ -31,6 +32,7 @@ class AppConfig:
             data=DataConfig(
                 concatenated_csv=payload["data"]["concatenated_csv"],
                 use_all_tickers=payload["data"]["useAllTickers"],
+                processed_csv=payload["data"]["processed_csv"],
             ),
             features=FeaturesConfig(
                 feature_config_path=payload["features"]["featureConfigPath"],

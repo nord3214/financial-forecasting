@@ -1,4 +1,5 @@
 import json
+from typing import Any
 from pandas import DataFrame
 
 from financial_TSF.data_models.feature_data_model import FeaturesConfig
@@ -18,14 +19,20 @@ class TechnicalIndicators:
         """Calculate technical indicators based on the configuration."""
         for indicator in self.config.technical_indicators.trend_indicators.indicators:
             print(f"Calculating {indicator}...")
+            if indicator == "SMA":
+                data = self.simple_moving_average(data, window_size=20)
+
             
-        return DataFrame()
+        return data
         
+    # def parameter_wrapper(self, func, params: list[Any]):
+    #     for param in params:
+    #         func(param)
 
 
-
-    def moving_average(self, data: DataFrame, window_size: int) -> DataFrame:
+    def simple_moving_average(self, data: DataFrame, window_size: int) -> DataFrame:
         """Calculate the moving average for Close price."""
-        data[f'MA_{window_size}'] = data['Close'].rolling(window=window_size).mean()
+        data[f'MA_{window_size}'] = data['close'].rolling(window=window_size).mean()
+        
     
         return data

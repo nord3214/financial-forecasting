@@ -1,7 +1,8 @@
 {
     "data": {
         "concatenated_csv": "data/concatenated/",
-        "useAllTickers": true
+        "useAllTickers": true,
+        "processed_csv": "data/processed/"
     },
     "features": {
         "featureConfigPath": "financial_TSF/features/feature_config.json"
