@@ -10,7 +10,8 @@
     "pipeline": {
         "steps": [
             "DataLoadingStep",
-            "FeatureStep"
+            "FeatureStep",
+            "NormalizingStep"
         ]
     }
 }

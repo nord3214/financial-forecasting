@@ -33,7 +33,7 @@ class FeatureStep(PipelineStep):
             
             self.__save_processed_data(data[i])
             
-        return data, model
+        return data
             
     
     
@@ -42,8 +42,9 @@ class FeatureStep(PipelineStep):
     
     
     def __save_processed_data(self, data: DataFrame) -> None:
-        print("Dataframe: ", data.tail(8))
-        ticker = data["ticker"].loc[0]
+        data = data.round(6)
+        print("Dataframe: ", data.tail(30))
+        ticker = data["ticker"].iloc[0]
         print("Saving processed data for ticker:", ticker)
         
         save_path = f'{self.config.data.processed_csv}/{ticker}/{ticker}_intraday_5min_processed.csv'
