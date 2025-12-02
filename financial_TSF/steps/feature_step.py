@@ -5,6 +5,7 @@ from typing import Any, Dict
 from pandas import DataFrame
 from financial_TSF.data_models.config_data_model import AppConfig, FeaturesConfig
 from financial_TSF.features.technical_indicator import TechnicalIndicators
+from financial_TSF.data_models.step_datamodel import StepResult
 from financial_TSF.steps.base_step import PipelineStep
 
 
@@ -17,7 +18,8 @@ class FeatureStep(PipelineStep):
             
     
     
-    def execute(self, data: list[DataFrame], model):
+    def execute(self, step_result: StepResult) -> StepResult:
+        data = step_result.data
         print("Received data for FeatureStep with", len(data), "dataframes.")
 
         # Go over all dataframes(different Tickers) and apply technical indicators
@@ -33,7 +35,8 @@ class FeatureStep(PipelineStep):
             
             self.__save_processed_data(data[i])
             
-        return data
+        step_result.data = data
+        return step_result
             
     
     

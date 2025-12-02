@@ -1,9 +1,12 @@
-from typing import Any
+from typing import Any, Optional, cast
 import pandas as pd
 import seaborn as sns
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.feature_selection import RFECV
 from sklearn.model_selection import TimeSeriesSplit, train_test_split
 from sklearn.model_selection import train_test_split
+
+from financial_TSF.models.base_model import BaseModel
 
 
 
@@ -27,15 +30,22 @@ RFECV_SETTINGS: dict[str, Any] = {
     "scoring": "neg_mean_squared_error",
 }
 
-class RandomForestRegressor:
+class RandomForestRegressor(BaseModel):
     def __init__(self, config: Any) -> None:
         self.config = config
-        self.rfr = None  # Placeholder for the actual RandomForestRegressor model
+        self.estimator: Optional[Any] = None  # placeholder fitted estimator model
+        
+        # Train/test splits populated in prepare_data()
+        self.X_train: Optional[pd.DataFrame]
+        self.X_test: Optional[pd.DataFrame] 
+        self.y_train: Optional[pd.Series] 
+        self.y_test: Optional[pd.Series] 
+
         
         
         
-    def model(self, data: list[pd.DataFrame]) -> bool:
-        """Model Closing price from Indicators."""
+    def prepare_data(self):
+        
         # print("Modeling Close Price of Apple Test dataset with Random Forest Regressor")
         
         df = pd.read_csv("data\processed\AAPL\AAPL_intraday_5min_processed.csv")
@@ -50,12 +60,21 @@ class RandomForestRegressor:
 
         X = df.drop("target", axis=1)    
         y = df["target"]
-        y_pred_as_lag = df["close"].shift(SETTINGS["forecast_horizon"])
         
-          
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
+        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
+
+        
+        
+        
+    def fit(self, data):
+        
+        self.prepare_data()
+        
         from sklearn.ensemble import RandomForestRegressor
         rfr = RandomForestRegressor(**HYPERPARAMS)
+        
+        if self.X_train is None or self.y_train is None:
+            raise RuntimeError("Data splits are not prepared. Call prepare_data() or Datasplit Pipeline step first.")
         
         if SETTINGS["use_RFECV"]:
             tscv = TimeSeriesSplit(RFECV_SETTINGS["cv_splits"])
@@ -67,22 +86,28 @@ class RandomForestRegressor:
                 scoring=RFECV_SETTINGS["scoring"],
             )
         
-            selector.fit(X_train, y_train)
+            self.estimator = selector.fit(self.X_train, self.y_train)
         else:
-            rfr.fit(X_train, y_train)
-            selector = rfr
+            rfr.fit(self.X_train, self.y_train)
+            self.estimator = rfr
         
-        y_pred = selector.predict(X_test)
+    def predict(self, data):
+        if self.estimator is None:
+            raise RuntimeError("Estimator is not fitted. Call fit() first.")
+        if self.X_test is None or self.X_train is None or self.y_test is None or self.y_train is None:
+            raise RuntimeError("Data splits are not prepared. Call prepare_data()/fit() first.")
+
+       
+
+        print("Mean Absolute Error (MAE): ", mean_absolute_error(self.y_test, self.estimator.predict(self.X_test)))
+        print("Mean Sqaured Error (MSE): ", mean_squared_error(self.y_test, self.estimator.predict(self.X_test)))
+        print("R2 Score: ", r2_score(self.y_test, self.estimator.predict(self.X_test)))
+
+        return self.y_test, self.estimator.predict(self.X_test), self.y_train, self.estimator.predict(self.X_train)
         
-        # :TODO Put evaluation metrics in a seperate step
-        from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-        print("Mean Absolute Error (MAE): ", mean_absolute_error(y_test, y_pred))
-        print("Mean Sqaured Error (MAE): ", mean_squared_error(y_test, y_pred))
-        print("R2 Score: ", r2_score(y_test, y_pred))
+
+
         
-        y_pred_as_lag = y_pred_as_lag[-len(y_pred):]
-        
-        return True
     
     # def model_dow_jones(self):
     #     """Model Dow Jones dataset using Random Forest Regressor."""
@@ -149,5 +174,3 @@ class RandomForestRegressor:
     
         
         
-        
-RandomForestRegressor("test").model([pd.DataFrame()])

@@ -8,6 +8,10 @@ class DataConfig:
     concatenated_csv: str
     use_all_tickers: bool
     processed_csv: str
+    
+@dataclass
+class ModelConfig:
+    model_type: str
 
 
 @dataclass
@@ -23,6 +27,7 @@ class PipelineConfig:
 @dataclass
 class AppConfig:
     data: DataConfig
+    model: ModelConfig
     features: FeaturesConfig
     pipeline: PipelineConfig
     
@@ -34,9 +39,13 @@ class AppConfig:
                 use_all_tickers=payload["data"]["useAllTickers"],
                 processed_csv=payload["data"]["processed_csv"],
             ),
+            model=ModelConfig(
+                model_type=payload["model"]["modelType"],
+            ),
             features=FeaturesConfig(
                 feature_config_path=payload["features"]["featureConfigPath"],
             ),
+
             pipeline=PipelineConfig(
                 steps=list(payload["pipeline"]["steps"]),
             ),

@@ -4,6 +4,9 @@
         "useAllTickers": true,
         "processed_csv": "data/processed/"
     },
+    "model": {
+        "modelType": "RF"
+    },
     "features": {
         "featureConfigPath": "financial_TSF/features/feature_config.json"
     },
@@ -11,7 +14,8 @@
         "steps": [
             "DataLoadingStep",
             "FeatureStep",
-            "NormalizingStep"
+            "NormalizingStep",
+            "TrainingStep"
         ]
     }
 }
