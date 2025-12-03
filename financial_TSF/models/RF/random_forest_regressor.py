@@ -97,13 +97,11 @@ class RandomForestRegressor(BaseModel):
         if self.X_test is None or self.X_train is None or self.y_test is None or self.y_train is None:
             raise RuntimeError("Data splits are not prepared. Call prepare_data()/fit() first.")
 
-       
+        y_test_pred =self.estimator.predict(self.X_test)
+        y_train_pred = self.estimator.predict(self.X_train)
 
-        print("Mean Absolute Error (MAE): ", mean_absolute_error(self.y_test, self.estimator.predict(self.X_test)))
-        print("Mean Sqaured Error (MSE): ", mean_squared_error(self.y_test, self.estimator.predict(self.X_test)))
-        print("R2 Score: ", r2_score(self.y_test, self.estimator.predict(self.X_test)))
 
-        return self.y_test, self.estimator.predict(self.X_test), self.y_train, self.estimator.predict(self.X_train)
+        return self.y_test, y_test_pred, self.y_train, y_train_pred
         
 
 

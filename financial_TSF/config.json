@@ -15,7 +15,8 @@
             "DataLoadingStep",
             "FeatureStep",
             "NormalizingStep",
-            "TrainingStep"
+            "TrainingStep",
+            "EvaluationStep"
         ]
     }
 }
