@@ -17,7 +17,11 @@
             "NormalizingStep",
             "SplittingStep",
             "TrainingStep",
-            "EvaluationStep"
+            "EvaluationStep",
+            "SavingStep"
         ]
+    },
+    "results": {
+        "resultsPath": "results/"
     }
 }

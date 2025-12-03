@@ -25,6 +25,7 @@ class TechnicalIndicators:
             
             print(f"Calculating {indicator}...")
             if indicator == "SMA":
+            # :TODO need to use features from config
                 data = self.simple_moving_average(data, window_size=20)
                 data = self.simple_moving_average_ta_lib(data, window_size=20)
                 

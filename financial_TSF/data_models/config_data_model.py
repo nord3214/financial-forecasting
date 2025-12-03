@@ -22,6 +22,10 @@ class FeaturesConfig:
 @dataclass
 class PipelineConfig:
     steps: List[str]
+    
+@dataclass
+class ResultsConfig:
+    results_path: str
 
 
 @dataclass
@@ -30,6 +34,7 @@ class AppConfig:
     model: ModelConfig
     features: FeaturesConfig
     pipeline: PipelineConfig
+    results: ResultsConfig
     
     @classmethod
     def from_dict(cls, payload: Mapping[str, Any]) -> "AppConfig":
@@ -49,4 +54,7 @@ class AppConfig:
             pipeline=PipelineConfig(
                 steps=list(payload["pipeline"]["steps"]),
             ),
+            results=ResultsConfig(
+                results_path=payload["results"]["resultsPath"],
+            )
         )
