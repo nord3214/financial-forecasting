@@ -3,6 +3,8 @@ from financial_TSF.data_models.config_data_model import AppConfig
 from financial_TSF.data_models.step_datamodel import StepResult
 from financial_TSF.models.base_model import BaseModel
 from financial_TSF.steps.base_step import PipelineStep
+import pandas as pd
+import numpy as np
 
 
 class EvaluationStep(PipelineStep):
@@ -24,6 +26,31 @@ class EvaluationStep(PipelineStep):
         print("R2 Score: ", r2_score(step_result.y_train, step_result.y_train_pred))  
         
         # economic model evaluation
+        # :TODO needs full rework of economic evaluation maybe with backtrader/ PyPortfolioOpt library
+        df = pd.DataFrame()
+        #current price
+        df["price"] = step_result.X_test["close"]
+        # future price +12 steps
+        df["future_price"] = step_result.y_test
+        
+        df["real_return"] = df["future_price"] - df["price"]
+        df["prediction"] = np.sign(step_result.y_test_pred - df["future_price"])
+        df["strategy_return"] = df["real_return"] * df["prediction"]
+        
+        total_return = df["strategy_return"].sum()
+        print("Total Strategy Return over Test Period: ", total_return)
+        
+        # 3. Compute Sharpe (annualized)
+        mean_ret = df['strategy_return'].mean()
+        std_ret = df['strategy_return'].std()
+
+        # number of trades per day
+        trades_per_day = 13  
+        annualization = np.sqrt(252 * trades_per_day)
+
+        sharpe = (mean_ret / std_ret) * annualization
+        print("Sharpe Ratio:", sharpe)
         
         
         return step_result
+    

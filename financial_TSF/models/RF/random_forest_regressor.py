@@ -6,6 +6,7 @@ from sklearn.feature_selection import RFECV
 from sklearn.model_selection import TimeSeriesSplit, train_test_split
 from sklearn.model_selection import train_test_split
 
+from financial_TSF.data_models.step_datamodel import StepResult
 from financial_TSF.models.base_model import BaseModel
 
 
@@ -66,9 +67,13 @@ class RandomForestRegressor(BaseModel):
         
         
         
-    def fit(self, data):
+    def fit(self, step_result: StepResult):
         
-        self.prepare_data()
+        # self.prepare_data()
+        self.X_train = step_result.X_train
+        self.X_test = step_result.X_test
+        self.y_train = step_result.y_train
+        self.y_test = step_result.y_test
         
         from sklearn.ensemble import RandomForestRegressor
         rfr = RandomForestRegressor(**HYPERPARAMS)
@@ -91,13 +96,13 @@ class RandomForestRegressor(BaseModel):
             rfr.fit(self.X_train, self.y_train)
             self.estimator = rfr
         
-    def predict(self, data):
+    def predict(self, step_result: StepResult) -> tuple[pd.Series, pd.Series, pd.Series, pd.Series]:
         if self.estimator is None:
             raise RuntimeError("Estimator is not fitted. Call fit() first.")
         if self.X_test is None or self.X_train is None or self.y_test is None or self.y_train is None:
             raise RuntimeError("Data splits are not prepared. Call prepare_data()/fit() first.")
 
-        y_test_pred =self.estimator.predict(self.X_test)
+        y_test_pred = self.estimator.predict(self.X_test)
         y_train_pred = self.estimator.predict(self.X_train)
 
 

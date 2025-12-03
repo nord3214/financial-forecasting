@@ -1,14 +1,16 @@
 from abc import ABC, abstractmethod
 
+from financial_TSF.data_models.step_datamodel import StepResult
+
 
 class BaseModel(ABC):
     
     @abstractmethod
-    def fit(self, data):
+    def fit(self, step_result: StepResult):
         """The actual model should be trained in this method"""
 
     @abstractmethod
-    def predict(self, data) -> tuple:
+    def predict(self, step_result: StepResult) -> tuple:
         """Generate predictions for the provided dataset.
         
         Returns:
