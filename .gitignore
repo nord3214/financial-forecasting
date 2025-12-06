@@ -1,6 +1,7 @@
 .env
-data/
+/data/
 
 __pycache__/
 .vscode/settings.json
 test.py
+results/

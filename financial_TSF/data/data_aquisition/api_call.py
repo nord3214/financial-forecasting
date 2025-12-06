@@ -1,6 +1,9 @@
 from pathlib import Path
 import requests
+import ratelimit
 
+@ratelimit.sleep_and_retry
+@ratelimit.limits(calls=75, period=60)
 def make_api_call(api_request: str, save_path: Path) -> bool:
     response: requests.Response = requests.get(api_request, timeout=10)
     response.raise_for_status()
