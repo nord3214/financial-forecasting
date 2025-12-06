@@ -35,17 +35,25 @@ class SavingStep(PipelineStep):
         # save metrics :TODO save metrics in step_result
         with open(run_dir / "metrics.json", "w") as f:
             json.dump({}, f, indent=4)
-            
-        # save prediction
-        pd.DataFrame({
-            "y_true": step_result.y_train,
-            "y_pred": step_result.y_train_pred
-        }).to_csv(run_dir / "preds_train.csv", index=False)
         
-        pd.DataFrame({
-            "y_true": step_result.y_test,
-            "y_pred": step_result.y_test_pred
-        }).to_csv(run_dir / "preds_test.csv", index=False)
+            
+        # save prediction data
+        
+        # :TODO handle multi horizon
+        pd.DataFrame(step_result.y_test).to_csv(run_dir / "y_test.csv", index=False)
+        pd.DataFrame(step_result.y_train).to_csv(run_dir / "y_train.csv", index=False)
+        pd.DataFrame(step_result.y_test_pred).to_csv(run_dir / "y_test_pred.csv", index=False)
+        pd.DataFrame(step_result.y_train_pred).to_csv(run_dir / "y_train_pred.csv", index=False)
+        
+        # pd.DataFrame({
+        #     "y_true": step_result.y_train,
+        #     "y_pred": step_result.y_train_pred
+        # }).to_csv(run_dir / "preds_train.csv", index=False)
+        
+        # pd.DataFrame({
+        #     "y_true": step_result.y_test,
+        #     "y_pred": step_result.y_test_pred
+        # }).to_csv(run_dir / "preds_test.csv", index=False)
         
         return step_result
         

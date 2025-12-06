@@ -1,3 +1,4 @@
+from pandas import DataFrame
 from sklearn.model_selection import train_test_split
 from financial_TSF.data_models.config_data_model import AppConfig
 from financial_TSF.data_models.step_datamodel import StepResult
@@ -19,12 +20,18 @@ class SplittingStep(PipelineStep):
         # step_result.data = list()
         
         
-        df["target"] = df["close"].shift(-SETTINGS["forecast_horizon"])
-        df = df.dropna()
         df = df.drop("ticker", axis=1)
 
-        X = df.drop("target", axis=1)    
-        y = df["target"]
+        
+        # create target-columns from horizons dynamically
+        for i, horizon in enumerate(self.config.settings.forecast_horizon):
+            df[f"target{i+1}"] = df["close"].shift(-horizon)
+        
+        df = df.dropna()
+        
+        y = df.iloc[:, -len(self.config.settings.forecast_horizon):]
+        X = df.iloc[:, :-len(self.config.settings.forecast_horizon)]
+        
         
         step_result.X_train, step_result.X_test, step_result.y_train, step_result.y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
 

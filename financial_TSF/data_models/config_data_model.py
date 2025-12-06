@@ -26,6 +26,10 @@ class PipelineConfig:
 @dataclass
 class ResultsConfig:
     results_path: str
+    
+@dataclass
+class SettingsConfig:
+    forecast_horizon: List[int]
 
 
 @dataclass
@@ -35,6 +39,7 @@ class AppConfig:
     features: FeaturesConfig
     pipeline: PipelineConfig
     results: ResultsConfig
+    settings: SettingsConfig
     
     @classmethod
     def from_dict(cls, payload: Mapping[str, Any]) -> "AppConfig":
@@ -56,5 +61,8 @@ class AppConfig:
             ),
             results=ResultsConfig(
                 results_path=payload["results"]["resultsPath"],
+            ),
+            settings=SettingsConfig(
+                forecast_horizon=payload["settings"]["forecast_horizon"],
             )
         )

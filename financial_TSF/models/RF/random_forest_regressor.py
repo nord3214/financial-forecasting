@@ -1,7 +1,5 @@
-from typing import Any, Optional, cast
+from typing import Any, Optional
 import pandas as pd
-import seaborn as sns
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.feature_selection import RFECV
 from sklearn.model_selection import TimeSeriesSplit, train_test_split
 from sklearn.model_selection import train_test_split
@@ -76,7 +74,9 @@ class RandomForestRegressor(BaseModel):
         self.y_test = step_result.y_test
         
         from sklearn.ensemble import RandomForestRegressor
+        from sklearn.multioutput import MultiOutputRegressor
         rfr = RandomForestRegressor(**HYPERPARAMS)
+        # rfr = MultiOutputRegressor(rfr)
         
         if self.X_train is None or self.y_train is None:
             raise RuntimeError("Data splits are not prepared. Call prepare_data() or Datasplit Pipeline step first.")

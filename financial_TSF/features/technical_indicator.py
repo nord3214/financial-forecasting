@@ -53,6 +53,8 @@ class TechnicalIndicators:
                 
                 
                 
+                
+                
         
         data['timestamp'] = pd.to_datetime(data['timestamp'])
         data.set_index('timestamp', inplace=True)
@@ -70,9 +72,10 @@ class TechnicalIndicators:
         data.info()
         print(data.tail())
         
+        
         # daily aggregated data
         
-
+        print(data["Log_Return"].describe())
             
         return data
         

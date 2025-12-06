@@ -23,5 +23,11 @@
     },
     "results": {
         "resultsPath": "results/"
+    },
+    "settings": {
+        "forecast_horizon": [
+            12,
+            24
+        ]
     }
 }
