@@ -5,11 +5,12 @@ from api_call import make_api_call
 from pandas import read_csv, concat
 import os
 
+absolute_path = Path(f"G:\\TSFdata/{parameters['interval']}")
 
 
 def fetch_ohlc_data():
     """Fetch OHLC data from Alpha Vantage API and save specificed Tickers to local CSV files."""
-    absolute_path = Path(f"G:\\TSFdata/{parameters['interval']}")
+    absolute_path = Path(f"G:\\TSFdata")
     for symbol in symbols:
         
         request_apis = []
@@ -42,7 +43,7 @@ def concat_data_from_ticker():
         all_files = sorted(Path(f"data/raw/{symbol}/").glob("*.csv"))
         combined_data = []
         for file in all_files:
-            if os.path.getsize(file) < 10000:
+            if os.path.getsize(file) < 1000:
                 print(f"File {file} is too small, likely incomplete. Skipping.")
                 continue
             else:
@@ -55,7 +56,27 @@ def concat_data_from_ticker():
             os.makedirs(save_dir, exist_ok=True)
             final_df = concat(combined_data, ignore_index=True)
             final_df.to_csv(f"{save_dir}{symbol}_intraday_{parameters['interval']}_full.csv", index=False)
+            
+def validate_data():
+    # :TODO put validate data in concat data function
+    """Removes files that are likely incomplete based on file size. Because tickers was not on stock exchange since then"""
 
+    absolute_path = Path(f"G:\\TSFdata")    
+    for symbol in symbols:
+        was_paused = False
+        all_files = sorted((absolute_path / f"raw/{symbol}/").glob("*.csv"), reverse=True)
+        for file in all_files:
+            if os.path.getsize(file) < 1000:
+                was_paused = True
+                print(f"File {file} is too small, likely incomplete. Deleting.")
+                os.remove(file)
+            else: 
+                if was_paused:
+                    # remove when after a pause a valid file appears again (due to errors or ticker of previous not being listed)
+                    print(f"Resuing after pause which is suspicious for {symbol} at file {file}.")
+                    os.remove(file)
+
+# validate_data()
 
 concat_data_from_ticker()
 
