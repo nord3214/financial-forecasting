@@ -57,6 +57,6 @@ def concat_data_from_ticker():
             final_df.to_csv(f"{save_dir}{symbol}_intraday_{parameters['interval']}_full.csv", index=False)
 
 
-# concat_data_from_ticker()
+concat_data_from_ticker()
 
-fetch_ohlc_data()
+# fetch_ohlc_data()

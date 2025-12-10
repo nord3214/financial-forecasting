@@ -1,4 +1,5 @@
 from typing import Any, Optional
+import numpy as np
 import pandas as pd
 from sklearn.feature_selection import RFECV
 from sklearn.model_selection import TimeSeriesSplit, train_test_split
@@ -20,7 +21,7 @@ HYPERPARAMS: dict[str, Any] = {
 
 SETTINGS: dict[str, Any] = {
     "forecast_horizon": 12,
-    "use_RFECV": True,
+    "use_RFECV": False,
 }
 
 RFECV_SETTINGS: dict[str, Any] = {
@@ -90,11 +91,39 @@ class RandomForestRegressor(BaseModel):
                 step=RFECV_SETTINGS["step"],
                 scoring=RFECV_SETTINGS["scoring"],
             )
+            
         
             self.estimator = selector.fit(self.X_train, self.y_train)
+
+            print(f"Optimal number of features: {selector.n_features_}")
+            import matplotlib.pyplot as plt
+
+            data = {
+                key: value
+                for key, value in selector.cv_results_.items()
+                if key in ["n_features", "mean_test_score", "std_test_score"]
+            }
+            cv_results = pd.DataFrame(data)
+            plt.figure()
+            plt.xlabel("Number of features selected")
+            plt.ylabel("Mean test accuracy")
+            plt.errorbar(
+                x=cv_results["n_features"],
+                y=cv_results["mean_test_score"],
+                yerr=cv_results["std_test_score"],
+            )
+            plt.title("Recursive Feature Elimination \nwith correlated features")
+            plt.show()
+            
         else:
             rfr.fit(self.X_train, self.y_train)
             self.estimator = rfr
+            importances = pd.Series(rfr.feature_importances_, index=self.X_train.columns)
+            
+            importances = importances.sort_values(ascending=False)
+            print("Feature importances:\n", importances)
+            
+            
         
     def predict(self, step_result: StepResult) -> tuple[pd.Series, pd.Series, pd.Series, pd.Series]:
         if self.estimator is None:
@@ -104,6 +133,16 @@ class RandomForestRegressor(BaseModel):
 
         y_test_pred = self.estimator.predict(self.X_test)
         y_train_pred = self.estimator.predict(self.X_train)
+        
+        # calculate mean and variance only distribution of epistemic uncertainty
+        
+        # tree_preds = np.array([tree.predict(self.X_test) for tree in self.estimator.estimators_])
+        # mean_pred = np.mean(tree_preds, axis=0)
+        # variance_pred = np.var(tree_preds, axis=0)
+        
+        # feature importance 
+        
+
 
 
         return self.y_test, y_test_pred, self.y_train, y_train_pred

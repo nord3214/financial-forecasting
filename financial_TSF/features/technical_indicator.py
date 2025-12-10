@@ -27,12 +27,12 @@ class TechnicalIndicators:
             if indicator == "SMA":
             # :TODO need to use features from config
                 data = self.simple_moving_average(data, window_size=20)
-                data = self.simple_moving_average_ta_lib(data, window_size=20)
+                # data = self.simple_moving_average_ta_lib(data, window_size=20)
                 
                 data = self.simple_moving_average(data, window_size=50)
-                data = self.simple_moving_average_ta_lib(data, window_size=50)
+                # data = self.simple_moving_average_ta_lib(data, window_size=50)
                 data = self.simple_moving_average(data, window_size=200)
-                data = self.simple_moving_average_ta_lib(data, window_size=200)
+                # data = self.simple_moving_average_ta_lib(data, window_size=200)
                 
                 data = self.exponential_moving_average(data, window_size=20)
                 data = self.exponential_moving_average(data, window_size=50)    

@@ -14,3 +14,4 @@ class StepResult:
     X_train: Any = None
     y_train: Any = None
     y_train_pred: Any = None
+    metrics: dict[str, Any] = field(default_factory=dict)
