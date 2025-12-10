@@ -26,8 +26,7 @@
     },
     "settings": {
         "forecast_horizon": [
-            12,
-            24
+            12
         ]
     }
 }

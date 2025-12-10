@@ -20,7 +20,7 @@ class EvaluationStep(PipelineStep):
         print("Mean Sqaured Error (MSE): ", mean_squared_error(step_result.y_test, step_result.y_test_pred))
         print("R2 Score: ", r2_score(step_result.y_test, step_result.y_test_pred))  
         
-        self.compute_multistep_metrics(step_result.y_test, step_result.y_test_pred)
+        step_result.metrics = self.compute_multistep_metrics(step_result.y_test, step_result.y_test_pred)
         
         
         # print("Metrics on Train Set:")

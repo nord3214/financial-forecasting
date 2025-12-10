@@ -34,7 +34,7 @@ class SavingStep(PipelineStep):
             
         # save metrics :TODO save metrics in step_result
         with open(run_dir / "metrics.json", "w") as f:
-            json.dump({}, f, indent=4)
+            json.dump(step_result.metrics, f, indent=4)
         
             
         # save prediction data

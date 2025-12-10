@@ -9,6 +9,7 @@ from financial_TSF.steps.base_step import PipelineStep
 class SplittingStep(PipelineStep):
     def __init__(self, config: AppConfig):
         self.config = config
+        self.use_log_returns = True
         
     def execute(self, step_result: StepResult) -> StepResult:
 
@@ -22,11 +23,16 @@ class SplittingStep(PipelineStep):
         
         df = df.drop("ticker", axis=1)
 
-        
-        # create target-columns from horizons dynamically
-        for i, horizon in enumerate(self.config.settings.forecast_horizon):
-            df[f"target{i+1}"] = df["close"].shift(-horizon)
-        
+        if self.use_log_returns:
+
+            for i, horizon in enumerate(self.config.settings.forecast_horizon):
+                df[f"target{i+1}"] = df['Log_Return'].rolling(window=horizon).sum().shift(-horizon)
+            
+        else:
+            # create target-columns from horizons dynamically
+            for i, horizon in enumerate(self.config.settings.forecast_horizon):
+                df[f"target{i+1}"] = df["close"].shift(-horizon)
+            
         df = df.dropna()
         
         y = df.iloc[:, -len(self.config.settings.forecast_horizon):]
