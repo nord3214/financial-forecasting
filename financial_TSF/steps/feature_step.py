@@ -30,11 +30,15 @@ class FeatureStep(PipelineStep):
             
             tech_indicators = TechnicalIndicators(self.config.features.feature_config_path, df)
             
-            data[i] = tech_indicators.calculate_indicators(df)
+            data[i] = tech_indicators.calculate_indicators()
             print(f"Processed DataFrame {i+1}, new shape: {data[i].shape}")
             
             self.__save_processed_data(data[i])
             
+        columns = data[0].columns.tolist()
+        print("Columns after technical indicators: ", columns)
+
+                        
         step_result.data = data
         return step_result
             

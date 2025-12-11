@@ -15,11 +15,69 @@ from financial_TSF.data_models.feature_data_model import FeaturesConfig
 class TechnicalIndicators:
     def __init__(self, config_path: str, data: DataFrame):
         with open(config_path, "r") as f:
-            self.config: FeaturesConfig = FeaturesConfig.from_dict(json.load(f))
+            self.config = (json.load(f))
         
         self.data: DataFrame = data
         
-    def calculate_indicators(self, data: DataFrame) -> DataFrame:
+            
+        self.indicator_registry = {
+        "SMA": self.simple_moving_average,
+        "EMA": self.exponential_moving_average,
+        "RSI": self.relative_strength_index,
+        "ROC": self.rate_of_change,
+        "ADX": self.average_directional_movement_index,
+        "DMI": self.directional_movement_index,
+        "BBANDS": self.bollinger_bands,
+        "NATR": self.normalized_average_true_range,
+        "OBV": self.on_balance_volume,
+        "LOGRET": self.log_return
+    }
+
+    def apply_indicator(self, indicator: str, params: list | dict | int):
+        """Dynamically apply a technical indicator based on its name and parameters."""
+        
+        if indicator not in self.indicator_registry:
+            raise ValueError(f"Indicator '{indicator}' not recognized.")
+        
+        func = self.indicator_registry[indicator]
+        
+        # handle bool params
+        if isinstance(params, bool):
+            if params:
+                self.data = func(self.data)
+        
+        # handle int as param
+        elif isinstance(params, int):
+            self.data =func(self.data, params)
+        
+        # handle list(int) of params 
+        elif isinstance(params, list) and all(isinstance(p, int) for p in params):
+            for p in params:
+                self.data = func(self.data, p)
+                
+        #handle dict of params 
+        elif isinstance(params, dict):
+            self.data = func(self.data, **params)
+            
+        # handle list of dicts
+        elif isinstance(params, list) and all(isinstance(p, dict) for p in params):
+            for p in params:
+                self.data = func(self.data, **p)
+                
+                
+        else:
+            raise ValueError(f"Parameters: '{params}' for indicator '{indicator}' are not in a recognized format.")
+        
+                
+    def calculate_indicators(self) -> DataFrame:
+        # :TODO create model class for config
+        for name, params in self.config['technical_indicators'].items():
+            print(f"Calculating {name} with params: {params}...")
+            self.apply_indicator(name, params)
+            
+        return self.data
+                
+    def calculate_indicators_old(self, data: DataFrame) -> DataFrame:
         """Calculate technical indicators based on the configuration."""
         for indicator in self.config.technical_indicators.trend_indicators.indicators:
             
@@ -79,9 +137,7 @@ class TechnicalIndicators:
             
         return data
         
-    # def parameter_wrapper(self, func, params: list[Any]):
-    #     for param in params:
-    #         func(param)
+
 
 
     def simple_moving_average(self, data, window_size: int) -> DataFrame:

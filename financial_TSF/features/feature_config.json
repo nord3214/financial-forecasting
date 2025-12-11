@@ -1,25 +1,45 @@
 {
-    "features": {
-        "technical_indicators": {
-            "enabled": true,
-            "trend_indicators": {
-                "enabled": true,
-                "indicators": [
-                    "SMA",
-                    "EMA",
-                    "MACD",
-                    "ADX"
-                ]
+    "technical_indicators": {
+        "SMA": [
+            20,
+            50,
+            200
+        ],
+        "EMA": [
+            20,
+            50,
+            200
+        ],
+        "RSI": [
+            14,
+            21
+        ],
+        "ROC": [
+            10,
+            20
+        ],
+        "ADX": [
+            14,
+            28
+        ],
+        "DMI": [
+            14,
+            28
+        ],
+        "BBANDS": [
+            {
+                "window_size": 20,
+                "num_std_dev": 2
+            },
+            {
+                "window_size": 50,
+                "num_std_dev": 2
             }
-        },
-        "time_features": {
-            "enabled": true,
-            "features": [
-                "time_of_day",
-                "day_of_week",
-                "month",
-                "quarter"
-            ]
-        }
+        ],
+        "NATR": [
+            14
+        ],
+        "OBV": true,
+        "LOGRET": true
     }
 }

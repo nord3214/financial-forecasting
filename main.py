@@ -7,8 +7,6 @@ print("Starting pipeline...")
     
 start_time = datetime.now()
 
-
-
 pipeline = Pipeline()
 print(pipeline.steps)
 pipeline.run(step_result=StepResult())

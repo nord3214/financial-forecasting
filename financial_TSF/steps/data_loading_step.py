@@ -47,6 +47,7 @@ class DataLoadingStep(PipelineStep):
     
     def __validate_data(self, df: DataFrame) -> bool:
         
+        df = df.copy()
         # Implement data validation logic here
         required_columns = {"open", "high", "low", "close", "volume", "ticker"}
         if not required_columns.issubset(df.columns):
