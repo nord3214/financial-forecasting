@@ -1,4 +1,4 @@
-from pandas import DataFrame
+import pandas as pd
 from sklearn.model_selection import train_test_split
 from financial_TSF.data_models.config_data_model import AppConfig
 from financial_TSF.data_models.step_datamodel import StepResult
@@ -13,9 +13,10 @@ class SplittingStep(PipelineStep):
         
     def execute(self, step_result: StepResult) -> StepResult:
 
-        # :TODO change to adjust for multiple dataframes
+        # :TODO maybe add index again for time series split in batches (lstm, transformer...)
 
-        df = step_result.data[0].copy()
+        df = pd.concat(step_result.data, axis = 0, ignore_index=True)
+        # df = step_result.data[0].copy()
         
         # :TODO check for memory if large datasets clear data
         # step_result.data = list()

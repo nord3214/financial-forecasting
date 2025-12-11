@@ -56,8 +56,8 @@ class TechnicalIndicators:
                 
                 
         
-        data['timestamp'] = pd.to_datetime(data['timestamp'])
-        data.set_index('timestamp', inplace=True)
+        # data['timestamp'] = pd.to_datetime(data['timestamp'])
+        # data.set_index('timestamp', inplace=True)
         
         # Agregating to daily data
         # data = data.resample('D').agg({
