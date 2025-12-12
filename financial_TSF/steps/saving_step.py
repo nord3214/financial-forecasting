@@ -29,6 +29,9 @@ class SavingStep(PipelineStep):
         # save pipeline config 
         shutil.copy("financial_TSF/config.json", run_dir / "pipeline_config.json")
         
+        # save feature config
+        shutil.copy("financial_TSF/features/feature_config.json", run_dir / "feature_config.json")
+        
         # save model config
         # :TODO create config file for model hyperparameters
             

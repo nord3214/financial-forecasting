@@ -22,9 +22,27 @@
             14,
             28
         ],
+        "VI": 14,
         "DMI": [
             14,
             28
+        ],
+        "CCI": [
+            14
+        ],
+        "Kurtosis": 50,
+        "MI": [
+            {
+                "ema_period": 9,
+                "sum_period": 25
+            }
+        ],
+        "STOCH": [
+            {
+                "window_size": 14,
+                "smooth_k": 3,
+                "smooth_d": 3
+            }
         ],
         "BBANDS": [
             {
@@ -36,7 +54,20 @@
                 "num_std_dev": 2
             }
         ],
+        "PVO": {
+            "fast_period": 12,
+            "long_period": 26,
+            "signal_period": 9
+        },
+        "MACD": {
+            "fast_period": 12,
+            "slow_period": 26,
+            "signal_period": 9
+        },
         "NATR": [
+            14
+        ],
+        "MFI": [
             14
         ],
         "OBV": true,

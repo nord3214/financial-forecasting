@@ -75,7 +75,6 @@ class RandomForestRegressor(BaseModel):
         self.y_test = step_result.y_test
         
         from sklearn.ensemble import RandomForestRegressor
-        from sklearn.multioutput import MultiOutputRegressor
         rfr = RandomForestRegressor(**HYPERPARAMS)
         # rfr = MultiOutputRegressor(rfr)
         
