@@ -8,7 +8,7 @@ api_key = os.getenv("ALPHAVANTAGE_API_KEY")
 print("Api key: ", api_key)
 
 parameters = {
-    'interval' : '5min',
+    'interval' : '1min',
     'month' : 'yyyy-mm',
     'apikey' : api_key
 }

@@ -10,11 +10,12 @@ absolute_path = Path(f"G:\\TSFdata/{parameters['interval']}")
 
 def fetch_ohlc_data():
     """Fetch OHLC data from Alpha Vantage API and save specificed Tickers to local CSV files."""
-    absolute_path = Path(f"G:\\TSFdata")
+    absolute_path = Path(f"G:\\TSFdata/{parameters['interval']}")
     for symbol in symbols:
-        
-        request_apis = []
-        
+
+        request_apis_path = absolute_path / f"api_calls/{symbol}_api_requests_{parameters['interval']}.txt"
+        request_apis_path.parent.mkdir(parents=True, exist_ok=True)       
+                
         for year in years:
             for month in months:
             
@@ -28,13 +29,9 @@ def fetch_ohlc_data():
                 api_request = f'https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval={parameters["interval"]}&month={year}-{month}&outputsize=full&extended_hours=false&apikey={parameters["apikey"]}&datatype=csv'
                 print("With API request: ", api_request) 
                 print(make_api_call(api_request, save_path=save_path))
-                request_apis.append(api_request)
-                
-        request_apis_path = absolute_path / f"api_calls/{symbol}_api_requests_{parameters['interval']}.txt"
-        request_apis_path.parent.mkdir(parents=True, exist_ok=True)            
-        with open(request_apis_path, "w") as f:
-            for api in request_apis:
-                f.write(api + "\n")
+                with open(request_apis_path, 'a' ) as f:
+                    f.write(api_request + "\n")
+
 
 
 def concat_data_from_ticker():
@@ -78,6 +75,6 @@ def validate_data():
 
 # validate_data()
 
-concat_data_from_ticker()
+# concat_data_from_ticker()
 
-# fetch_ohlc_data()
+fetch_ohlc_data()
