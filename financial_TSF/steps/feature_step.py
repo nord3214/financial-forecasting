@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 from typing import Any, Dict
+import pandas as pd
 
 from pandas import DataFrame
 from financial_TSF.data_models.config_data_model import AppConfig, FeaturesConfig
@@ -32,6 +33,9 @@ class FeatureStep(PipelineStep):
             
             data[i] = tech_indicators.calculate_indicators()
             print(f"Processed DataFrame {i+1}, new shape: {data[i].shape}")
+
+            with pd.option_context('display.max_columns', None):
+                print(data[i].describe())
             
             self.__save_processed_data(data[i])
             

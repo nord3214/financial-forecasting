@@ -16,7 +16,7 @@ from financial_TSF.data_models.feature_data_model import FeaturesConfig
 class TechnicalIndicators:
     def __init__(self, config_path: str, data: DataFrame):
         with open(config_path, "r") as f:
-            self.config = (json.load(f))
+            self.config: dict[str, Any] = (json.load(f))
         
         self.data: DataFrame = data
         
@@ -43,6 +43,12 @@ class TechnicalIndicators:
         "DAY_OF_WEEK": self.day_of_week,
         "MINUTE_OF_DAY": self.min_of_day,
         "DAILY_CLOSE": self.daily_closing_price,
+        "VOL_SPIKE": self.volume_spike,
+        "VOL_RATIO": self.volume_ratio,
+        "VOLATILITY_RETURN": self.volatility_return,
+        "HL_RANGE": self.hl_range,
+        "OC_RANGE": self.oc_range,
+        "TURNOVER": self.turnover,
     }
 
     def apply_indicator(self, indicator: str, params: list | dict | int):
@@ -53,10 +59,9 @@ class TechnicalIndicators:
         
         func = self.indicator_registry[indicator]
         
-        # handle bool params
-        if isinstance(params, bool):
-            if params:
-                self.data = func(self.data)
+        # handle None params 
+        if not params:
+            self.data = func(self.data)
         
         # handle int as param
         elif isinstance(params, int):
@@ -86,7 +91,9 @@ class TechnicalIndicators:
         # :TODO do scaling / normalization somewhere
         for name, params in self.config['technical_indicators'].items():
             # print(f"Calculating {name} with params: {params}...")
-            self.apply_indicator(name, params)
+            if params['enabled'] == True:
+
+                self.apply_indicator(name, params.get('params', None))
             
         return self.data
                 
@@ -241,9 +248,9 @@ class TechnicalIndicators:
         data[f'Volume_Spike_{window_size}'] = data['volume'] / data['volume'].rolling(window=window_size).mean()
         return data
     
-    def volume_ratio(self, data, fast_period: int, long_period: int) -> DataFrame:
+    def volume_ratio(self, data, fast_period: int, slow_period: int) -> DataFrame:
         """Calculate Volume Ratio of n periods as the ratio of current volume to volume m periods ago."""
-        data[f'Volume_Ratio_{fast_period}_{long_period}'] = data['volume'].rolling(fast_period).mean() / data['volume'].rolling(long_period).mean()
+        data[f'Volume_Ratio_{fast_period}_{slow_period}'] = data['volume'].rolling(fast_period).mean() / data['volume'].rolling(slow_period).mean()
         return data
     
     def volatility_return(self, data, window_size: int) -> DataFrame:
@@ -271,8 +278,8 @@ class TechnicalIndicators:
     def daily_closing_price(self, data) -> DataFrame:
         """Extract the daily closing price."""
         df = data.copy()
-        df['Date'] = df.index.date
-        daily_close = df.groupby('Date')['close'].last()
+        df['date'] = df.index.date
+        daily_close = df.groupby(df['date'])['close'].last()
         daily_close_prev = daily_close.shift(1)
         data = data.merge(daily_close_prev.rename('Daily_Close'), left_on=df.index.date, right_on=daily_close_prev.index, how='left')
         data.drop(columns=['key_0'], inplace=True)

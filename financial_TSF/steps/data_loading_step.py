@@ -27,7 +27,7 @@ class DataLoadingStep(PipelineStep):
                 df['timestamp'] = pd.to_datetime(df['timestamp'])
                 df = df.set_index('timestamp')
 
-                df = df.loc['2020-01-01':'2024-12-31']
+                df = df.loc['2024-10-01':'2024-12-31']
                 
                 # Add tickername from file name AAPL_intraday....csv to df
                 file_name = Path(csv_path).stem

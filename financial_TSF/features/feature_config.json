@@ -1,84 +1,150 @@
 {
-    "technical_indicators": {
-        "SMA": [
-            20,
-            50,
-            200
-        ],
-        "EMA": [
-            20,
-            50,
-            200
-        ],
-        "RSI": [
-            14,
-            21
-        ],
-        "ROC": [
-            10,
-            20
-        ],
-        "ADX": [
-            14,
-            28
-        ],
-        "VI": 14,
-        "DMI": [
-            14,
-            28
-        ],
-        "CCI": [
-            14
-        ],
-        "Kurtosis": 50,
-        "MI": [
-            {
-                "ema_period": 9,
-                "sum_period": 25
-            }
-        ],
-        "STOCH": [
-            {
-                "window_size": 14,
-                "smooth_k": 3,
-                "smooth_d": 3
-            }
-        ],
-        "BBANDS": [
-            {
-                "window_size": 20,
-                "num_std_dev": 2
-            },
-            {
-                "window_size": 50,
-                "num_std_dev": 2
-            }
-        ],
-        "PVO": {
-            "fast_period": 12,
-            "long_period": 26,
-            "signal_period": 9
-        },
-        "MACD": {
-            "fast_period": 12,
-            "slow_period": 26,
-            "signal_period": 9
-        },
-        "NATR": [
-            14
-        ],
-        "MFI": [
-            14
-        ],
-        "OBV": true,
-        "LOGRET": [
-            1,
-            5,
-            10,
-            20
-        ],
-        "DAY_OF_WEEK": true,
-        "MINUTE_OF_DAY": true,
-        "DAILY_CLOSE": true
-    }
+  "technical_indicators": {
+
+    "SMA": {
+      "enabled": true,
+      "params": [20, 50, 200]
+    },
+
+    "EMA": {
+      "enabled": true,
+      "params": [20, 50, 200]
+    },
+
+    "RSI": {
+      "enabled": false,
+      "params": [14, 21]
+    },
+
+    "ROC": {
+      "enabled": false,
+      "params": [10, 20]
+    },
+
+    "ADX": {
+      "enabled": false,
+      "params": [14, 28]
+    },
+
+    "VI": {
+      "enabled": false,
+      "params": 14
+    },
+
+    "DMI": {
+      "enabled": false,
+      "params": [14, 28]
+    },
+
+    "CCI": {
+      "enabled": false,
+      "params": [14]
+    },
+
+    "Kurtosis": {
+      "enabled": false,
+      "params": 50
+    },
+
+    "MI": {
+      "enabled": false,
+      "params": [
+        { "ema_period": 9, "sum_period": 25 }
+      ]
+    },
+
+    "STOCH": {
+      "enabled": false,
+      "params": [
+        { "window_size": 14, "smooth_k": 3, "smooth_d": 3 }
+      ]
+    },
+
+    "BBANDS": {
+      "enabled": false,
+      "params": [
+        { "window_size": 20, "num_std_dev": 2 },
+        { "window_size": 50, "num_std_dev": 2 }
+      ]
+    },
+
+    "PVO": {
+      "enabled": false,
+      "params": {
+        "fast_period": 12,
+        "long_period": 26,
+        "signal_period": 9
+      }
+    },
+
+    "MACD": {
+      "enabled": false,
+      "params": {
+        "fast_period": 12,
+        "slow_period": 26,
+        "signal_period": 9
+      }
+    },
+
+    "NATR": {
+      "enabled": false,
+      "params": [14]
+    },
+
+    "MFI": {
+      "enabled": false,
+      "params": [14]
+    },
+
+    "OBV": {
+      "enabled": false
+    },
+
+    "LOGRET": {
+      "enabled": true,
+      "params": [1, 5, 10, 20]
+    },
+
+    "DAY_OF_WEEK": {
+      "enabled": true
+    },
+
+    "MINUTE_OF_DAY": {
+      "enabled": true
+    },
+
+    "DAILY_CLOSE": {
+      "enabled": true
+    },
+
+    "VOL_SPIKE": {
+      "enabled": true,
+      "params": [5, 10, 20, 40]
+  },
+    "VOL_RATIO": {
+        "enabled": true,
+        "params": [
+          {"fast_period": 5, "slow_period": 20},
+          {"fast_period": 10, "slow_period": 40},
+          {"fast_period": 20, "slow_period": 50}
+        ]
+    }, 
+    "VOLATILITY_RETURN": {
+        "enabled": true,
+        "params": [5, 10, 20, 40]
+    },
+    "HL_RANGE": {
+        "enabled": true,
+        "params": [5, 10, 20, 40]
+    },
+    "OC_RANGE": {
+        "enabled": true,
+        "params": [5, 10, 20, 40]
+    },
+
+    "TURNOVER": {
+        "enabled": true
+      }
+
+}
 }
