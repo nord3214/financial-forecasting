@@ -5,7 +5,7 @@
         "processed_csv": "data/processed/"
     },
     "model": {
-        "modelType": "RF"
+        "modelType": "LinearRegression"
     },
     "features": {
         "featureConfigPath": "financial_TSF/features/feature_config.json"
