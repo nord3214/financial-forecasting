@@ -27,7 +27,7 @@ class SplittingStep(PipelineStep):
         if self.use_log_returns:
 
             for i, horizon in enumerate(self.config.settings.forecast_horizon):
-                df[f"target{i+1}"] = df['Log_Return'].rolling(window=horizon).sum().shift(-horizon)
+                df[f"target{i+1}"] = df['Log_Return_1'].rolling(window=horizon).sum().shift(-horizon)
             
         else:
             # create target-columns from horizons dynamically

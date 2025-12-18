@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import talib
 
+from financial_TSF import data
 from financial_TSF.data_models.feature_data_model import FeaturesConfig
 
 
@@ -39,6 +40,9 @@ class TechnicalIndicators:
         "PVO": self.volume_oscillator,
         "MACD": self.moving_average_convergence_divergence,
         "MFI": self.money_flow_index,
+        "DAY_OF_WEEK": self.day_of_week,
+        "MINUTE_OF_DAY": self.min_of_day,
+        "DAILY_CLOSE": self.daily_closing_price,
     }
 
     def apply_indicator(self, indicator: str, params: list | dict | int):
@@ -81,7 +85,7 @@ class TechnicalIndicators:
         # :TODO create model class for config
         # :TODO do scaling / normalization somewhere
         for name, params in self.config['technical_indicators'].items():
-            print(f"Calculating {name} with params: {params}...")
+            # print(f"Calculating {name} with params: {params}...")
             self.apply_indicator(name, params)
             
         return self.data
@@ -227,9 +231,58 @@ class TechnicalIndicators:
         
         return data
     
-    def log_return(self, data) -> DataFrame:
+    def log_return(self, data, window_size: int) -> DataFrame:
         """Calculate the Log Return."""
-        data['Log_Return'] = np.log(data['close'] / data['close'].shift(1))
+        data[f'Log_Return_{window_size}'] = np.log(data['close'] / data['close'].shift(window_size))
+        return data
+    
+    def volume_spike(self, data, window_size: int) -> DataFrame:
+        """Calculate Volume Spike as the ratio of current volume to average volume over a window."""
+        data[f'Volume_Spike_{window_size}'] = data['volume'] / data['volume'].rolling(window=window_size).mean()
+        return data
+    
+    def volume_ratio(self, data, fast_period: int, long_period: int) -> DataFrame:
+        """Calculate Volume Ratio of n periods as the ratio of current volume to volume m periods ago."""
+        data[f'Volume_Ratio_{fast_period}_{long_period}'] = data['volume'].rolling(fast_period).mean() / data['volume'].rolling(long_period).mean()
+        return data
+    
+    def volatility_return(self, data, window_size: int) -> DataFrame:
+        """Calculate Volatility Return as the standard deviation of log returns over a window."""
+        df = data.copy()
+        df = self.log_return(df, 1)
+        data[f'Volatility_Return_{window_size}'] = df['Log_Return_1'].rolling(window=window_size).std()
+        
+        return data
+    
+    def hl_range(self, data, window_size: int) -> DataFrame:
+        """Calculate the High-Low Range over a rolling window."""
+        data[f'HL_Range_{window_size}'] = (data['high'] - data['low']).rolling(window=window_size).mean()
+        
+        return data
+    
+    # :TODO add hl range kind of ratio over n periods
+    
+    def oc_range(self, data, window_size: int) -> DataFrame:
+        """Calculate the Open-Close Range over a rolling window."""
+        data[f'OC_Range_{window_size}'] = (data['open'] - data['close']).rolling(window=window_size).mean()
+        
+        return data
+    
+    def daily_closing_price(self, data) -> DataFrame:
+        """Extract the daily closing price."""
+        df = data.copy()
+        df['Date'] = df.index.date
+        daily_close = df.groupby('Date')['close'].last()
+        daily_close_prev = daily_close.shift(1)
+        data = data.merge(daily_close_prev.rename('Daily_Close'), left_on=df.index.date, right_on=daily_close_prev.index, how='left')
+        data.drop(columns=['key_0'], inplace=True)
+        # print(data[['Daily_Close', 'close']].tail(200))
+        
+        return data
+    
+    def turnover(self, data) -> DataFrame:
+        """Calculate Turnover as volume multiplied by close price."""
+        data['Turnover'] = data['volume'] * data['close']
         
         return data
     
@@ -290,8 +343,8 @@ class TechnicalIndicators:
     def kurtosis(self, data, window_size: int) -> DataFrame:
         """Calculate the Kurtosis over a rolling window."""
         df = data.copy()
-        df = self.log_return(df)
-        data[f'Kurtosis_{window_size}'] = df['Log_Return'].rolling(window=window_size).kurt()
+        df = self.log_return(df, 1)
+        data[f'Kurtosis_{window_size}'] = df['Log_Return_1'].rolling(window=window_size).kurt()
         
         print(data[[f'Kurtosis_{window_size}']].describe())
         return data
@@ -314,6 +367,29 @@ class TechnicalIndicators:
         data[f'MFI_{window_size}'] = talib.MFI(data['high'], data['low'], data['close'], data['volume'], timeperiod=window_size)
         
         return data
+    
+    def day_of_week(self, data) -> DataFrame:
+        """Extract the day of the week from the timestamp."""
+        df = data.copy()
+        df['Day_of_Week'] = df.index.dayofweek  # Monday=0, Sunday=6
+        df['Day_of_Week_sin'] = np.sin(2 * np.pi * df['Day_of_Week'] / 6)
+        df['Day_of_Week_cos'] = np.cos(2 * np.pi * df['Day_of_Week'] / 6)
+        # data['Day_of_Week_sin'] = df['Day_of_Week_sin']
+        # data['Day_of_Week_cos'] = df['Day_of_Week_cos']
+        data['Day_of_Week'] = df['Day_of_Week']
+        return data 
+    
+    def min_of_day(self, data) -> DataFrame:
+        """Extract the minute of the day from the timestamp."""
+        df = data.copy()
+        df['Minute_of_Day'] = df.index.hour * 60 + df.index.minute
+        df['Minute_of_Day_sin'] = np.sin(2 * np.pi * df['Minute_of_Day'] / 1440)
+        df['Minute_of_Day_cos'] = np.cos(2 * np.pi * df['Minute_of_Day'] / 1440)
+        # data['Minute_of_Day_sin'] = df['Minute_of_Day_sin']
+        # data['Minute_of_Day_cos'] = df['Minute_of_Day_cos']
+        data['Minute_of_Day'] = df['Minute_of_Day']
+        return data
+    
     
     
     

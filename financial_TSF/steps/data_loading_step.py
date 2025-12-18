@@ -19,7 +19,7 @@ class DataLoadingStep(PipelineStep):
         csv_file_paths = Path(self.csv_path).rglob('*.csv')
         
         tickers: list[DataFrame] = []          
-        csv_file_paths = list(csv_file_paths)[:5]           
+        csv_file_paths = list(csv_file_paths)[:1]           
         for csv_path in csv_file_paths:
             df = DataFrame()
             try:
@@ -27,7 +27,7 @@ class DataLoadingStep(PipelineStep):
                 df['timestamp'] = pd.to_datetime(df['timestamp'])
                 df = df.set_index('timestamp')
 
-                df = df.loc['2024-01-01':'2024-12-31']
+                df = df.loc['2020-01-01':'2024-12-31']
                 
                 # Add tickername from file name AAPL_intraday....csv to df
                 file_name = Path(csv_path).stem

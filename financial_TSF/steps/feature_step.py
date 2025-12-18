@@ -49,7 +49,7 @@ class FeatureStep(PipelineStep):
     
     
     def __save_processed_data(self, data: DataFrame) -> None:
-        data = data.round(6)
+        # data = data.round(10)
         print("Dataframe: ", data.tail(30))
         ticker = data["ticker"].iloc[0]
         print("Saving processed data for ticker:", ticker)

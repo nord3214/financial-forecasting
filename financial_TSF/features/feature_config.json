@@ -71,6 +71,14 @@
             14
         ],
         "OBV": true,
-        "LOGRET": true
+        "LOGRET": [
+            1,
+            5,
+            10,
+            20
+        ],
+        "DAY_OF_WEEK": true,
+        "MINUTE_OF_DAY": true,
+        "DAILY_CLOSE": true
     }
 }

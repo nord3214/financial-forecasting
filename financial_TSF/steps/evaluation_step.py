@@ -1,4 +1,4 @@
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, root_mean_squared_error
 from financial_TSF.data_models.config_data_model import AppConfig
 from financial_TSF.data_models.step_datamodel import StepResult
 from financial_TSF.models.base_model import BaseModel
@@ -18,6 +18,7 @@ class EvaluationStep(PipelineStep):
         print("Metrics on Test Set:")
         print("Mean Absolute Error (MAE): ", mean_absolute_error(step_result.y_test, step_result.y_test_pred))
         print("Mean Sqaured Error (MSE): ", mean_squared_error(step_result.y_test, step_result.y_test_pred))
+        
         print("R2 Score: ", r2_score(step_result.y_test, step_result.y_test_pred))  
         
         step_result.metrics = self.compute_multistep_metrics(step_result.y_test, step_result.y_test_pred)
@@ -57,6 +58,32 @@ class EvaluationStep(PipelineStep):
         
         return step_result
     
+    def compute_hitrate(self, y_true, y_pred) -> float:
+        """
+            Compute hit rate for direction of returns
+        """
+
+        return np.mean(np.sign(y_true.values) == np.sign(y_pred.values))
+    
+    def calculate_sharpe_ratio(self, y_true, y_pred) -> float:
+        """
+            Calculate annualized Sharpe Ratio
+        """
+        signal = np.sign(y_pred.values)
+        pnl = signal * y_true.values
+        mean_ret = pnl.mean()
+        std_ret = pnl.std()
+        
+        # number of trades per year
+        trades_per_day = (6.5 * 60) / 5  # assuming 5-minute intervals in a 6.5-hour trading day
+
+        annualization = np.sqrt(252 * trades_per_day)
+
+        sharpe: float = (mean_ret / std_ret) * annualization
+        return sharpe
+    
+    
+    
     def compute_multistep_metrics(self, y_true, y_pred) -> dict[str, float]:
         """
             H = number of forecast horizons
@@ -70,21 +97,28 @@ class EvaluationStep(PipelineStep):
             y_true_horizon = pd.DataFrame(y_true).iloc[:, i]
             y_pred_horizon = pd.DataFrame(y_pred).iloc[:, i]
             
+            
             mae = mean_absolute_error(y_true_horizon, y_pred_horizon)
             mse = mean_squared_error(y_true_horizon, y_pred_horizon)
+            rmse = root_mean_squared_error(y_true_horizon, y_pred_horizon)
             r2 = r2_score(y_true_horizon, y_pred_horizon)
             
             metrics[f"Horizon_{horizon}"] = {
                 "MAE": mae,
                 "MSE": mse,
-                "R2": r2
+                "RMSE": rmse,
+                "R2": r2,
+                "Hit_Rate": self.compute_hitrate(y_true_horizon, y_pred_horizon),
+                "Sharpe_Ratio": self.calculate_sharpe_ratio(y_true_horizon, y_pred_horizon)
             }
             
         metrics["Global"] = {
             "MAE": mean_absolute_error(y_true, y_pred),
             "MSE": mean_squared_error(y_true, y_pred),
+            "RMSE": root_mean_squared_error(y_true, y_pred),
             "R2": r2_score(y_true, y_pred)
         }
         
         print("Multi-step Forecasting Metrics: ", metrics)    
         return metrics
+    
