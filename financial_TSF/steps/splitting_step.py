@@ -2,7 +2,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from financial_TSF.data_models.config_data_model import AppConfig
 from financial_TSF.data_models.step_datamodel import StepResult
-from financial_TSF.models.RF.random_forest_regressor import SETTINGS
+from financial_TSF.models.rf.random_forest_regressor import SETTINGS
 from financial_TSF.steps.base_step import PipelineStep
 
 
