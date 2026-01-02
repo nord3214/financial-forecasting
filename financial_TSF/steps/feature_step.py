@@ -62,28 +62,6 @@ class FeatureStep(PipelineStep):
             print(f"New calculated features with {[df.shape for df in data]} shapes.")
             
             
-            
-            print("Loading processed data from cache...")
-            df_loaded = []
-            for ticker in step_result.ticker_names:
-                processed_df = self.__load_processed_data(ticker)
-                df_loaded.append(processed_df)
-            
-            df1 = data[0]
-            df2 = df_loaded[0]
-            
-            print(df1.shape.__eq__(df2.shape))
-            print(df1.columns.equals(df2.columns))
-            print(df1.index.equals(df2.index))
-            print(df1.dtypes.compare(df2.dtypes))
-            print(df1.compare(df2))
-            print(df1.equals(df2))
-
-
-
-            
-            return step_result
-
             return step_result
             
     
@@ -99,15 +77,17 @@ class FeatureStep(PipelineStep):
         ticker = data["ticker"].iloc[0]
         print("Saving processed data for ticker:", ticker)
         
-        save_path = f'{self.config.data.processed_csv}/{ticker}/{ticker}_intraday_5min_processed.csv'
+        save_path = f'{self.config.data.processed_csv}/{ticker}/{ticker}_intraday_5min_processed.parquet'
         Path(save_path).parent.mkdir(parents=True, exist_ok=True)
-        data.to_csv(save_path, index=False, float_format='%.15g')
+        data.to_parquet(save_path, index=False)
+        # data.to_csv(save_path, index=False, float_format='%.15g')
         print(f"Processed data saved to {save_path}")
         
     def __load_processed_data(self, ticker: str) -> DataFrame:
-        load_path = f'{self.config.data.processed_csv}/{ticker}/{ticker}_intraday_5min_processed.csv'
+        load_path = f'{self.config.data.processed_csv}/{ticker}/{ticker}_intraday_5min_processed.parquet'
         print("Loading processed data for ticker:", ticker)
-        data = pd.read_csv(load_path)
+        # data = pd.read_csv(load_path)
+        data = pd.read_parquet(load_path)
         print(f"Processed data loaded from {load_path}, shape: {data.shape}")
         return data
        
