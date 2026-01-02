@@ -5,12 +5,11 @@ from api_call import make_api_call
 from pandas import read_csv, concat
 import os
 
-absolute_path = Path(f"G:\\TSFdata/{parameters['interval']}")
+absolute_path = Path(f"G:\\TSFdata/2026/{parameters['interval']}")
 
 
 def fetch_ohlc_data():
     """Fetch OHLC data from Alpha Vantage API and save specificed Tickers to local CSV files."""
-    absolute_path = Path(f"G:\\TSFdata/{parameters['interval']}")
     for symbol in symbols:
 
         request_apis_path = absolute_path / f"api_calls/{symbol}_api_requests_{parameters['interval']}.txt"
