@@ -6,8 +6,11 @@ from typing import Any, List
 @dataclass
 class DataConfig:
     concatenated_csv: str
-    use_all_tickers: bool
+    number_of_tickers: int
+    start_date: str
+    end_date: str
     processed_csv: str
+    use_cached_processed_data: bool
     
 @dataclass
 class ModelConfig:
@@ -46,8 +49,11 @@ class AppConfig:
         return cls(
             data=DataConfig(
                 concatenated_csv=payload["data"]["concatenated_csv"],
-                use_all_tickers=payload["data"]["useAllTickers"],
+                number_of_tickers=payload["data"]["number_of_tickers"],
+                start_date=payload["data"]["start_date"],
+                end_date=payload["data"]["end_date"],
                 processed_csv=payload["data"]["processed_csv"],
+                use_cached_processed_data=payload["data"]["use_cached_processed_data"],
             ),
             model=ModelConfig(
                 model_type=payload["model"]["modelType"],

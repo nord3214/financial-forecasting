@@ -65,7 +65,10 @@ class SavingStep(PipelineStep):
             f.write(f"Run with {step_result.X_train.shape[0]} training samples and {step_result.X_test.shape[0]} test samples.\n")
             f.write(f"Run duration was: {datetime.now() - step_result.start_time} \n")
             f.write(f"Results saved in: {run_dir}\n")
+            f.write(f"Trained on {self.config.data.number_of_tickers} tickers. [{', '.join(step_result.ticker_names)}] \nfrom {self.config.data.start_date} to {self.config.data.end_date}\n")
             json.dump(step_result.metrics, f, indent=4)
+            
+            print("Pipeline finished, results saved to:", run_dir/"summary.txt")
         
         return step_result
         

@@ -17,8 +17,8 @@ class ScalingStep(PipelineStep):
             print(f"Scaling DataFrame {i+1} with shape: {df.shape}")
             
             df_non_numeric = df.select_dtypes(exclude=['float64', 'int64'])
-            # data[i] = self.perform_standard_scaling(df)  
-            # data[i] = pd.concat([data[i], df_non_numeric], axis=1) 
+            data[i] = self.perform_min_max_scaling(df)  
+            data[i] = pd.concat([data[i], df_non_numeric], axis=1) 
             
             data[i] = df         
             
