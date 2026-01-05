@@ -21,7 +21,7 @@ class TechnicalIndicators:
         self.data: DataFrame = data
         
             
-        self.indicator_registry = {
+        self.feature_registry = {
         "SMA": self.simple_moving_average,
         "EMA": self.exponential_moving_average,
         "RSI": self.relative_strength_index,
@@ -51,39 +51,39 @@ class TechnicalIndicators:
         "TURNOVER": self.turnover,
     }
 
-    def apply_indicator(self, indicator: str, params: list | dict | int):
+    def apply_indicator(self, feature_name: str, params: list | dict | int):
         """Dynamically apply a technical indicator based on its name and parameters."""
         
-        if indicator not in self.indicator_registry:
-            raise ValueError(f"Indicator '{indicator}' not recognized.")
+        if feature_name not in self.feature_registry:
+            raise ValueError(f"Indicator '{feature_name}' not recognized.")
         
-        func = self.indicator_registry[indicator]
+        func = self.feature_registry[feature_name]
         
         # handle None params 
         if not params:
-            self.data = func(self.data)
+            self.data = func(feature_name, self.data)
         
         # handle int as param
         elif isinstance(params, int):
-            self.data =func(self.data, params)
+            self.data =func(feature_name, self.data, params)
         
         # handle list(int) of params 
         elif isinstance(params, list) and all(isinstance(p, int) for p in params):
             for p in params:
-                self.data = func(self.data, p)
+                self.data = func(feature_name, self.data, p)
                 
         #handle dict of params 
         elif isinstance(params, dict):
-            self.data = func(self.data, **params)
+            self.data = func(feature_name, self.data, **params)
             
         # handle list of dicts
         elif isinstance(params, list) and all(isinstance(p, dict) for p in params):
             for p in params:
-                self.data = func(self.data, **p)
+                self.data = func(feature_name, self.data, **p)
                 
                 
         else:
-            raise ValueError(f"Parameters: '{params}' for indicator '{indicator}' are not in a recognized format.")
+            raise ValueError(f"Parameters: '{params}' for indicator '{feature_name}' are not in a recognized format.")
         
                 
     def calculate_indicators(self) -> DataFrame:
@@ -94,6 +94,7 @@ class TechnicalIndicators:
             if params['enabled'] == True:
 
                 self.apply_indicator(name, params.get('params', None))
+        print("Final data after technical indicators:\n", self.data.info())
             
         return self.data
                 
@@ -160,140 +161,140 @@ class TechnicalIndicators:
 
 
 
-    def simple_moving_average(self, data, window_size: int) -> DataFrame:
+    def simple_moving_average(self, feature_name, data, window_size: int) -> DataFrame:
         """Calculate the moving average for Close price."""
-        data[f'MA_{window_size}'] = data['close'].rolling(window=window_size).mean()
+        data[f'{feature_name}_{window_size}'] = data['close'].rolling(window=window_size).mean()
         
         return data
     
-    def simple_moving_average_ta_lib(self, data, window_size: int) -> DataFrame:
+    def simple_moving_average_ta_lib(self, feature_name, data, window_size: int) -> DataFrame:
         """Calculate the moving average for Close price using TA-Lib."""
-        data[f'MA_{window_size}_ta_lib'] = talib.SMA(data['close'], timeperiod=window_size)
+        data[f'{feature_name}_{window_size}_ta_lib'] = talib.SMA(data['close'], timeperiod=window_size)
     
         return data
     
-    def exponential_moving_average(self, data, window_size: int) -> DataFrame:
+    def exponential_moving_average(self, feature_name, data, window_size: int) -> DataFrame:
         """Calculate the Exponential Moving Average (EMA)."""
-        data[f'EMA_{window_size}'] = talib.EMA(data['close'], timeperiod=window_size)
+        data[f'{feature_name}_{window_size}'] = talib.EMA(data['close'], timeperiod=window_size)
         
         return data
     
-    def average_directional_movement_index(self, data, window_size: int) -> DataFrame:
+    def average_directional_movement_index(self, feature_name, data, window_size: int) -> DataFrame:
         """Calculate the Average Directional Movement Index (ADX)."""
-        data[f'ADX_{window_size}'] = talib.ADX(data['high'], data['low'], data['close'], timeperiod=window_size)
+        data[f'{feature_name}_{window_size}'] = talib.ADX(data['high'], data['low'], data['close'], timeperiod=window_size)
         
         return data
     
-    def moving_average_convergence_divergence(self, data, fast_period: int, slow_period: int, signal_period: int):
+    def moving_average_convergence_divergence(self, feature_name, data, fast_period: int, slow_period: int, signal_period: int):
         """Calculate the Moving Average Convergence Divergence (MACD)."""
         macd, macdsignal, macdhist = talib.MACD(data['close'], fastperiod=fast_period, slowperiod=slow_period, signalperiod=signal_period)
-        data['MACD'] = macd
-        data['MACD_Signal'] = macdsignal
-        data['MACD_Hist'] = macdhist
+        data[f'{feature_name}_MACD'] = macd
+        data[f'{feature_name}_MACD_Signal'] = macdsignal
+        data[f'{feature_name}_MACD_Hist'] = macdhist
         
         return data
         
-    def directional_movement_index(self, data, window_size: int) -> DataFrame:
+    def directional_movement_index(self, feature_name, data, window_size: int) -> DataFrame:
         """Calculate the Directional Movement Index (DMI)."""  
-        data[f'DMI_{window_size}'] = talib.DX(data['high'], data['low'], data['close'], timeperiod=window_size)
+        data[f'{feature_name}_{window_size}'] = talib.DX(data['high'], data['low'], data['close'], timeperiod=window_size)
         
         return data
     
-    def relative_strength_index(self, data, window_size: int) -> DataFrame:
+    def relative_strength_index(self, feature_name, data, window_size: int) -> DataFrame:
         """Calculate the Relative Strength Index (RSI)."""
-        data[f'RSI_{window_size}'] = talib.RSI(data['close'], timeperiod=window_size)
+        data[f'{feature_name}_{window_size}'] = talib.RSI(data['close'], timeperiod=window_size)
         
         return data
     
-    def williams_percent_range(self, data, window_size: int) -> DataFrame:
+    def williams_percent_range(self, feature_name, data, window_size: int) -> DataFrame:
         """Calculate the Williams %R."""
-        data[f'WILLR_{window_size}'] = talib.WILLR(data['high'], data['low'], data['close'], timeperiod=window_size)
+        data[f'{feature_name}_{window_size}'] = talib.WILLR(data['high'], data['low'], data['close'], timeperiod=window_size)
         
         return data
     
-    def rate_of_change(self, data, window_size: int) -> DataFrame:
+    def rate_of_change(self, feature_name, data, window_size: int) -> DataFrame:
         """Calculate the Rate of Change (ROC)."""
-        data[f'ROC_{window_size}'] = talib.ROC(data['close'], timeperiod=window_size)
+        data[f'{feature_name}_{window_size}'] = talib.ROC(data['close'], timeperiod=window_size)
         
         return data
     
-    def bollinger_bands(self, data, window_size: int, num_std_dev: float) -> DataFrame:
+    def bollinger_bands(self, feature_name, data, window_size: int, num_std_dev: float) -> DataFrame:
         """Calculate the Bollinger Bands."""
         upperband, middleband, lowerband = talib.BBANDS(data['close'], timeperiod=window_size, nbdevup=num_std_dev, nbdevdn=num_std_dev)
-        data[f'BB_Upper_{window_size}'] = upperband
-        data[f'BB_Middle_{window_size}'] = middleband
-        data[f'BB_Lower_{window_size}'] = lowerband
+        data[f'{feature_name}_Upper_{window_size}'] = upperband
+        data[f'{feature_name}_Middle_{window_size}'] = middleband
+        data[f'{feature_name}_Lower_{window_size}'] = lowerband
         
         return data
     
-    def normalized_average_true_range(self, data, window_size: int) -> DataFrame:
+    def normalized_average_true_range(self, feature_name, data, window_size: int) -> DataFrame:
         """Calculate the Normalized Average True Range (NATR)."""
-        data[f'NATR_{window_size}'] = talib.NATR(data['high'], data['low'], data['close'], timeperiod=window_size)
+        data[f'{feature_name}_{window_size}'] = talib.NATR(data['high'], data['low'], data['close'], timeperiod=window_size)
         
         return data
     
-    def on_balance_volume(self, data) -> DataFrame:
+    def on_balance_volume(self, feature_name, data) -> DataFrame:
         """Calculate the On-Balance Volume (OBV)."""
-        data['OBV'] = talib.OBV(data['close'], data['volume'])
+        data[f'{feature_name}'] = talib.OBV(data['close'], data['volume'])
         
         return data
     
-    def log_return(self, data, window_size: int) -> DataFrame:
+    def log_return(self, feature_name, data, window_size: int) -> DataFrame:
         """Calculate the Log Return."""
-        data[f'Log_Return_{window_size}'] = np.log(data['close'] / data['close'].shift(window_size))
+        data[f'{feature_name}_{window_size}'] = np.log(data['close'] / data['close'].shift(window_size))
         return data
     
-    def volume_spike(self, data, window_size: int) -> DataFrame:
+    def volume_spike(self, feature_name, data, window_size: int) -> DataFrame:
         """Calculate Volume Spike as the ratio of current volume to average volume over a window."""
-        data[f'Volume_Spike_{window_size}'] = data['volume'] / data['volume'].rolling(window=window_size).mean()
+        data[f'{feature_name}_{window_size}'] = data['volume'] / data['volume'].rolling(window=window_size).mean()
         return data
     
-    def volume_ratio(self, data, fast_period: int, slow_period: int) -> DataFrame:
+    def volume_ratio(self, feature_name, data, fast_period: int, slow_period: int) -> DataFrame:
         """Calculate Volume Ratio of n periods as the ratio of current volume to volume m periods ago."""
-        data[f'Volume_Ratio_{fast_period}_{slow_period}'] = data['volume'].rolling(fast_period).mean() / data['volume'].rolling(slow_period).mean()
+        data[f'{feature_name}_{fast_period}_{slow_period}'] = data['volume'].rolling(fast_period).mean() / data['volume'].rolling(slow_period).mean()
         return data
     
-    def volatility_return(self, data, window_size: int) -> DataFrame:
+    def volatility_return(self, feature_name, data, window_size: int) -> DataFrame:
         """Calculate Volatility Return as the standard deviation of log returns over a window."""
         df = data.copy()
-        df = self.log_return(df, 1)
-        data[f'Volatility_Return_{window_size}'] = df['Log_Return_1'].rolling(window=window_size).std()
+        df = self.log_return("log_return", df, 1)
+        data[f'{feature_name}_{window_size}'] = df[f'log_return_1'].rolling(window=window_size).std()
         
         return data
     
-    def hl_range(self, data, window_size: int) -> DataFrame:
+    def hl_range(self, feature_name, data, window_size: int) -> DataFrame:
         """Calculate the High-Low Range over a rolling window."""
-        data[f'HL_Range_{window_size}'] = (data['high'] - data['low']).rolling(window=window_size).mean()
+        data[f'{feature_name}_{window_size}'] = (data['high'] - data['low']).rolling(window=window_size).mean()
         
         return data
     
     # :TODO add hl range kind of ratio over n periods
     
-    def oc_range(self, data, window_size: int) -> DataFrame:
+    def oc_range(self, feature_name, data, window_size: int) -> DataFrame:
         """Calculate the Open-Close Range over a rolling window."""
-        data[f'OC_Range_{window_size}'] = (data['open'] - data['close']).rolling(window=window_size).mean()
+        data[f'{feature_name}_{window_size}'] = (data['open'] - data['close']).rolling(window=window_size).mean()
         
         return data
     
-    def daily_closing_price(self, data) -> DataFrame:
+    def daily_closing_price(self, feature_name, data) -> DataFrame:
         """Extract the daily closing price."""
         df = data.copy()
         df['date'] = df.index.date
         daily_close = df.groupby(df['date'])['close'].last()
         daily_close_prev = daily_close.shift(1)
-        data = data.merge(daily_close_prev.rename('Daily_Close'), left_on=df.index.date, right_on=daily_close_prev.index, how='left')
+        data = data.merge(daily_close_prev.rename(f'{feature_name}'), left_on=df.index.date, right_on=daily_close_prev.index, how='left')
         data.drop(columns=['key_0'], inplace=True)
-        # print(data[['Daily_Close', 'close']].tail(200))
+        # print(data[[f'{feature_name}', 'close']].tail(200))
         
         return data
     
-    def turnover(self, data) -> DataFrame:
+    def turnover(self, feature_name, data) -> DataFrame:
         """Calculate Turnover as volume multiplied by close price."""
-        data['Turnover'] = data['volume'] * data['close']
+        data[f'{feature_name}'] = data['volume'] * data['close']
         
         return data
     
-    def vortex_indicator(self, data, window_size) -> DataFrame:
+    def vortex_indicator(self, feature_name, data, window_size) -> DataFrame:
         """Calculate the Vortex Indicator (VI)"""
         df = data.copy()
         df['TR'] = talib.TRANGE(df['high'], df['low'], df['close'])
@@ -304,34 +305,34 @@ class TechnicalIndicators:
         df['VM_plus_sum'] = df['VM_plus'].rolling(window=window_size).sum()
         df['VM_minus_sum'] = df['VM_minus'].rolling(window=window_size).sum()
         
-        data[f'VI_plus_{window_size}'] = df['VM_plus_sum'] / df['TR_sum']
-        data[f'VI_minus_{window_size}'] = df['VM_minus_sum'] / df['TR_sum']
+        data[f'{feature_name}_plus_{window_size}'] = df['VM_plus_sum'] / df['TR_sum']
+        data[f'{feature_name}_minus_{window_size}'] = df['VM_minus_sum'] / df['TR_sum']
         
-        data[f'VI_diff_{window_size}'] = (data[f'VI_plus_{window_size}'] - data[f'VI_minus_{window_size}'])
+        data[f'{feature_name}_diff_{window_size}'] = (data[f'{feature_name}_plus_{window_size}'] - data[f'{feature_name}_minus_{window_size}'])
         
         # :TODO adjust how to represent the indicator
         
         return data
     
-    def stochastic_oscillator(self, data, window_size: int, smooth_k: int, smooth_d: int) -> DataFrame:
+    def stochastic_oscillator(self, feature_name, data, window_size: int, smooth_k: int, smooth_d: int) -> DataFrame:
         """Calculate the Stochastic Oscillator."""
         slowk, slowd = talib.STOCH(data['high'], data['low'], data['close'], 
                                    fastk_period=window_size, 
                                    slowk_period=smooth_k, 
                                    slowd_period=smooth_d, 
                                    )
-        data[f'STOCH_%K_{window_size}'] = slowk
-        data[f'STOCH_%D_{window_size}'] = slowd
+        data[f'{feature_name}_%K_{window_size}'] = slowk
+        data[f'{feature_name}_%D_{window_size}'] = slowd
         
         return data
     
-    def commodity_channel_index(self, data, window_size: int) -> DataFrame:
+    def commodity_channel_index(self, feature_name, data, window_size: int) -> DataFrame:
         """Calculate the Commodity Channel Index (CCI)."""
-        data[f'CCI_{window_size}'] = talib.CCI(data['high'], data['low'], data['close'], timeperiod=window_size)
+        data[f'{feature_name}_{window_size}'] = talib.CCI(data['high'], data['low'], data['close'], timeperiod=window_size)
         
         return data
     
-    def mass_index(self, data: pd.DataFrame, ema_period: int = 9, sum_period: int = 25) -> pd.DataFrame:
+    def mass_index(self, feature_name, data: pd.DataFrame, ema_period: int = 9, sum_period: int = 25) -> pd.DataFrame:
         """Calculate the Mass Index (MI) – a volatility indicator"""
 
         df = data.copy()
@@ -343,20 +344,20 @@ class TechnicalIndicators:
 
         df['Ratio'] = df['EMA1'] / df['EMA2']
         df['MassIndex'] = df['Ratio'].rolling(window=sum_period).sum()
-        data[f'MassIndex_{ema_period}_{sum_period}'] = df[['MassIndex']]
+        data[f'{feature_name}_{ema_period}_{sum_period}'] = df[['MassIndex']]
 
         return data
     
-    def kurtosis(self, data, window_size: int) -> DataFrame:
+    def kurtosis(self, feature_name, data, window_size: int) -> DataFrame:
         """Calculate the Kurtosis over a rolling window."""
         df = data.copy()
-        df = self.log_return(df, 1)
-        data[f'Kurtosis_{window_size}'] = df['Log_Return_1'].rolling(window=window_size).kurt()
+        df = self.log_return("log_return", df, 1)
+        data[f'{feature_name}_{window_size}'] = df['log_return_1'].rolling(window=window_size).kurt()
         
-        print(data[[f'Kurtosis_{window_size}']].describe())
+        print(data[[f'{feature_name}_{window_size}']].describe())
         return data
     
-    def volume_oscillator(self, data, fast_period: int, long_period: int, signal_period: int) -> DataFrame:
+    def volume_oscillator(self, feature_name, data, fast_period: int, long_period: int, signal_period: int) -> DataFrame:
         """Calculate the Percentage Volume Oscillator (PVO)."""
         df = data.copy()
         df['VMA_short'] = df['volume'].rolling(window=fast_period).mean()
@@ -366,16 +367,16 @@ class TechnicalIndicators:
         df['PVO_hist'] = df['PVO'] - df['PVO_signal']
         
         
-        data[['PVO', 'PVO_signal', 'PVO_hist']] = df[['PVO', 'PVO_signal', 'PVO_hist']]
+        data[[f'{feature_name}', f'{feature_name}_signal', f'{feature_name}_hist']] = df[['PVO', 'PVO_signal', 'PVO_hist']]
         return data
     
-    def money_flow_index(self, data, window_size: int) -> DataFrame:
+    def money_flow_index(self, feature_name, data, window_size: int) -> DataFrame:
         """Calculate the Money Flow Index (MFI)."""
-        data[f'MFI_{window_size}'] = talib.MFI(data['high'], data['low'], data['close'], data['volume'], timeperiod=window_size)
+        data[f'{feature_name}_{window_size}'] = talib.MFI(data['high'], data['low'], data['close'], data['volume'], timeperiod=window_size)
         
         return data
     
-    def day_of_week(self, data) -> DataFrame:
+    def day_of_week(self, feature_name, data) -> DataFrame:
         """Extract the day of the week from the timestamp."""
         df = data.copy()
         df['Day_of_Week'] = df.index.dayofweek  # Monday=0, Sunday=6
@@ -383,10 +384,10 @@ class TechnicalIndicators:
         df['Day_of_Week_cos'] = np.cos(2 * np.pi * df['Day_of_Week'] / 6)
         # data['Day_of_Week_sin'] = df['Day_of_Week_sin']
         # data['Day_of_Week_cos'] = df['Day_of_Week_cos']
-        data['Day_of_Week'] = df['Day_of_Week']
+        data[f'{feature_name}'] = df['Day_of_Week']
         return data 
     
-    def min_of_day(self, data) -> DataFrame:
+    def min_of_day(self, feature_name, data) -> DataFrame:
         """Extract the minute of the day from the timestamp."""
         df = data.copy()
         df['Minute_of_Day'] = df.index.hour * 60 + df.index.minute
@@ -394,7 +395,7 @@ class TechnicalIndicators:
         df['Minute_of_Day_cos'] = np.cos(2 * np.pi * df['Minute_of_Day'] / 1440)
         # data['Minute_of_Day_sin'] = df['Minute_of_Day_sin']
         # data['Minute_of_Day_cos'] = df['Minute_of_Day_cos']
-        data['Minute_of_Day'] = df['Minute_of_Day']
+        data[f'{feature_name}'] = df['Minute_of_Day']
         return data
     
     
