@@ -6,7 +6,8 @@
         20,
         50,
         200
-      ]
+      ],
+      "complexity": 10
     },
     "EMA": {
       "enabled": true,
@@ -14,49 +15,57 @@
         20,
         50,
         200
-      ]
+      ],
+      "complexity": 20
     },
     "RSI": {
       "enabled": false,
       "params": [
         14,
         21
-      ]
+      ],
+      "complexity": 30
     },
     "ROC": {
       "enabled": false,
       "params": [
         10,
         20
-      ]
+      ],
+      "complexity": 30
     },
     "ADX": {
       "enabled": false,
       "params": [
         14,
         28
-      ]
+      ],
+      "complexity": 30
     },
     "VI": {
       "enabled": false,
-      "params": 14
+      "params": 14,
+      "complexity": 30
     },
     "DMI": {
       "enabled": false,
       "params": [
         14,
         28
-      ]
+      ],
+      "complexity": 30
     },
     "CCI": {
       "enabled": false,
       "params": [
         14
-      ]
+      ],
+      "complexity": 30
     },
     "Kurtosis": {
       "enabled": false,
-      "params": 50
+      "params": 50,
+      "complexity": 20
     },
     "MI": {
       "enabled": false,
@@ -65,7 +74,8 @@
           "ema_period": 9,
           "sum_period": 25
         }
-      ]
+      ],
+      "complexity": 30
     },
     "STOCH": {
       "enabled": false,
@@ -75,7 +85,8 @@
           "smooth_k": 3,
           "smooth_d": 3
         }
-      ]
+      ],
+      "complexity": 30
     },
     "BBANDS": {
       "enabled": false,
@@ -88,7 +99,8 @@
           "window_size": 50,
           "num_std_dev": 2
         }
-      ]
+      ],
+      "complexity": 30
     },
     "PVO": {
       "enabled": false,
@@ -96,7 +108,8 @@
         "fast_period": 12,
         "long_period": 26,
         "signal_period": 9
-      }
+      },
+      "complexity": 30
     },
     "MACD": {
       "enabled": false,
@@ -104,22 +117,26 @@
         "fast_period": 12,
         "slow_period": 26,
         "signal_period": 9
-      }
+      },
+      "complexity": 30
     },
     "NATR": {
       "enabled": false,
       "params": [
         14
-      ]
+      ],
+      "complexity": 30
     },
     "MFI": {
       "enabled": false,
       "params": [
         14
-      ]
+      ],
+      "complexity": 30
     },
     "OBV": {
-      "enabled": false
+      "enabled": false,
+      "complexity": 20
     },
     "LOGRET": {
       "enabled": true,
@@ -128,16 +145,20 @@
         5,
         10,
         20
-      ]
+      ],
+      "complexity": 20
     },
     "DAY_OF_WEEK": {
-      "enabled": false
+      "enabled": false,
+      "complexity": 20
     },
     "MINUTE_OF_DAY": {
-      "enabled": false
+      "enabled": false,
+      "complexity": 20
     },
     "DAILY_CLOSE": {
-      "enabled": true
+      "enabled": true,
+      "complexity": 20
     },
     "VOL_SPIKE": {
       "enabled": true,
@@ -146,7 +167,8 @@
         10,
         20,
         40
-      ]
+      ],
+      "complexity": 20
     },
     "VOL_RATIO": {
       "enabled": true,
@@ -163,7 +185,8 @@
           "fast_period": 20,
           "slow_period": 50
         }
-      ]
+      ],
+      "complexity": 20
     },
     "VOLATILITY_RETURN": {
       "enabled": true,
@@ -172,7 +195,8 @@
         10,
         20,
         40
-      ]
+      ],
+      "complexity": 20
     },
     "HL_RANGE": {
       "enabled": true,
@@ -181,7 +205,8 @@
         10,
         20,
         40
-      ]
+      ],
+      "complexity": 20
     },
     "OC_RANGE": {
       "enabled": true,
@@ -190,10 +215,12 @@
         10,
         20,
         40
-      ]
+      ],
+      "complexity": 20
     },
     "TURNOVER": {
-      "enabled": true
+      "enabled": true,
+      "complexity": 20
     }
   }
 }

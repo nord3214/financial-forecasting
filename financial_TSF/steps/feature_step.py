@@ -14,8 +14,11 @@ class FeatureStep(PipelineStep):
     
     def __init__(self, config: AppConfig) -> None:
         self.config: AppConfig = config
+        self.complexity_levels = self.config.features.complexity_levels
+        
         with open(self.config.features.feature_config_path, "r") as f:
             self.feature_config: Dict[str, Any] = json.load(f)
+        
             
     
     
@@ -45,7 +48,7 @@ class FeatureStep(PipelineStep):
                 
                 tech_indicators = TechnicalIndicators(self.config.features.feature_config_path, df)
                 
-                data[i] = tech_indicators.calculate_indicators()
+                data[i] = tech_indicators.calculate_indicators(self.complexity_levels)
                 data[i] = data[i].round(10)
                 print(f"Processed DataFrame {i+1}, new shape: {data[i].shape}")
 

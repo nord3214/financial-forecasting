@@ -1,7 +1,7 @@
 {
     "data": {
         "concatenated_csv": "data/concatenated/",
-        "number_of_tickers": null,
+        "number_of_tickers": 2,
         "start_date": "2024-01-01",
         "end_date": "2024-12-31",
         "use_cached_processed_data": false,
@@ -11,7 +11,11 @@
         "modelType": "LinearRegression"
     },
     "features": {
-        "featureConfigPath": "financial_TSF/features/feature_config.json"
+        "featureConfigPath": "financial_TSF/features/feature_config.json",
+        "complexity_levels": [
+            10,
+            20
+        ]
     },
     "pipeline": {
         "steps": [

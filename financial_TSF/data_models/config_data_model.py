@@ -20,6 +20,7 @@ class ModelConfig:
 @dataclass
 class FeaturesConfig:
     feature_config_path: str
+    complexity_levels: List[int]
 
 
 @dataclass
@@ -60,6 +61,7 @@ class AppConfig:
             ),
             features=FeaturesConfig(
                 feature_config_path=payload["features"]["featureConfigPath"],
+                complexity_levels=payload["features"]["complexity_levels"],
             ),
 
             pipeline=PipelineConfig(

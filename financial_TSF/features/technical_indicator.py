@@ -53,7 +53,7 @@ class TechnicalIndicators:
 
     def apply_indicator(self, feature_name: str, params: list | dict | int):
         """Dynamically apply a technical indicator based on its name and parameters."""
-        
+            
         if feature_name not in self.feature_registry:
             raise ValueError(f"Indicator '{feature_name}' not recognized.")
         
@@ -86,14 +86,15 @@ class TechnicalIndicators:
             raise ValueError(f"Parameters: '{params}' for indicator '{feature_name}' are not in a recognized format.")
         
                 
-    def calculate_indicators(self) -> DataFrame:
+    def calculate_indicators(self, complexity_levels: list[int]) -> DataFrame:
+
         # :TODO create model class for config
         # :TODO do scaling / normalization somewhere
         for name, params in self.config['technical_indicators'].items():
             # print(f"Calculating {name} with params: {params}...")
             if params['enabled'] == True:
-
-                self.apply_indicator(name, params.get('params', None))
+                if params.get('complexity', None) in complexity_levels:
+                    self.apply_indicator(name, params.get('params', None))
         print("Final data after technical indicators:\n", self.data.info())
             
         return self.data
