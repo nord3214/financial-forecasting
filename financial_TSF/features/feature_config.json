@@ -146,7 +146,7 @@
         10,
         20
       ],
-      "complexity": 20
+      "complexity": 10
     },
     "DAY_OF_WEEK": {
       "enabled": false,

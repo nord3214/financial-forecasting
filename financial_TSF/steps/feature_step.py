@@ -44,6 +44,7 @@ class FeatureStep(PipelineStep):
             for i, df in enumerate(data):
                 print(f"Processing DataFrame {i+1} with shape: {df.shape}")
                 
+                current_ticker = df["ticker"].iloc[0]
                 # Go over all technical indicators from config and apply them
                 
                 tech_indicators = TechnicalIndicators(self.config.features.feature_config_path, df)
@@ -55,7 +56,7 @@ class FeatureStep(PipelineStep):
                 with pd.option_context('display.max_columns', None):
                     print(data[i].describe())
                 
-                self.__save_processed_data(data[i])
+                self.__save_processed_data(current_ticker, data[i])
                 
             columns = data[0].columns.tolist()
             print("Columns after technical indicators: ", columns)
@@ -74,10 +75,9 @@ class FeatureStep(PipelineStep):
     
     
     
-    def __save_processed_data(self, data: DataFrame) -> None:
+    def __save_processed_data(self, ticker: str, data: DataFrame) -> None:
         # data = data.round(10)
         print("Dataframe: ", data.tail(30))
-        ticker = data["ticker"].iloc[0]
         print("Saving processed data for ticker:", ticker)
         
         save_path = f'{self.config.data.processed_csv}/{ticker}/{ticker}_intraday_5min_processed.parquet'

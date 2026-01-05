@@ -95,13 +95,23 @@ class TechnicalIndicators:
             if params['enabled'] == True:
                 if params.get('complexity', None) in complexity_levels:
                     self.apply_indicator(name, params.get('params', None))
+        if 10 not in complexity_levels:
+            self.data = self.remove_basic_columns_from_dataset(self.data)
+            
         print("Final data after technical indicators:\n", self.data.info())
             
         return self.data
+    
+    def remove_basic_columns_from_dataset(self, data: DataFrame) -> DataFrame:
+        """Remove basic columns from the dataset, keeping only technical indicators."""
+        # :TODO somewhere remove index timestamp
+        basic_columns = ['open', 'high', 'low', 'close', 'volume', 'ticker']
+        
+        return data.drop(columns=basic_columns)
                 
     # def calculate_indicators_old(self, data: DataFrame) -> DataFrame:
     #     """Calculate technical indicators based on the configuration."""
-    #     for indicator in self.config.technical_indicators.trend_indicators.indicators:
+    #     for indicator in self.config  .technical_indicators.trend_indicators.indicators:
             
     #         print(f"Calculating {indicator}...")
     #         if indicator == "SMA":

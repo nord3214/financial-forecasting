@@ -21,11 +21,11 @@ class SplittingStep(PipelineStep):
         # :TODO check for memory if large datasets clear data
         # step_result.data = list()
         
-        
-        df = df.drop("ticker", axis=1)
+        if "ticker" in df.columns:
+            df = df.drop("ticker", axis=1)
 
         if self.use_log_returns:
-
+            # :TODO handle target creation independently of 'LOGRET_1' column
             for i, horizon in enumerate(self.config.settings.forecast_horizon):
                 df[f"target{i+1}"] = df['LOGRET_1'].rolling(window=horizon).sum().shift(-horizon)
             
