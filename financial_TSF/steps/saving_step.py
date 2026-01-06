@@ -61,6 +61,7 @@ class SavingStep(PipelineStep):
         with open(run_dir / "summary.txt", "w") as f:
             f.write(f"Model Type: {self.config.model.model_type}\n")
             f.write(f"Run with {step_result.X_train.shape[1]} features.\n")
+            f.write(f"Features complexity level: {self.config.features.complexity_levels}\n")
             f.write(f"Features: {', '.join(step_result.X_train.columns)}\n")
             f.write(f"Run with {step_result.X_train.shape[0]} training samples and {step_result.X_test.shape[0]} test samples.\n")
             f.write(f"Run duration was: {datetime.now() - step_result.start_time} \n")

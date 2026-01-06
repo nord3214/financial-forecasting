@@ -58,6 +58,7 @@ def validate_data():
     """Removes files that are likely incomplete based on file size. Because tickers was not on stock exchange since then"""
 
     absolute_path = Path(f"G:\\TSFdata")    
+    absolute_path = Path("data")
     for symbol in symbols:
         was_paused = False
         all_files = sorted((absolute_path / f"raw/{symbol}/").glob("*.csv"), reverse=True)
@@ -74,6 +75,6 @@ def validate_data():
 
 # validate_data()
 
-# concat_data_from_ticker()
+concat_data_from_ticker()
 
-fetch_ohlc_data()
+# fetch_ohlc_data()

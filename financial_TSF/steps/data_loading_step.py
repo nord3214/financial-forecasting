@@ -66,6 +66,10 @@ class DataLoadingStep(PipelineStep):
         df = df.copy()
         # Implement data validation logic here
         required_columns = {"open", "high", "low", "close", "volume", "ticker"}
+        
+        if df.empty:
+            print("Data validation failed. DataFrame is empty.")
+            return False
         if not required_columns.issubset(df.columns):
             print("Data validation failed. Missing columns:", required_columns - set(df.columns))
             return False
