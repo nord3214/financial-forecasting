@@ -4,7 +4,80 @@ import pandas as pd
 
 plt.style.use("dark_background")
 
-df = pd.read_csv("data/concatenated/AAPL/AAPL_intraday_5min_full.csv")
+def plot_ohlc_and_analyze(df: pd.DataFrame):
+    
+    plt.plot(df.index, df['open'], label='Open Price')
+    plt.plot(df.index, df['high'], label='High Price')
+    plt.plot(df.index, df['low'], label='Low Price')
+    plt.plot(df.index, df['close'], label='Close Price')  
+    plt.xlabel('Timestamp')
+    plt.ylabel('Price')
+    plt.title('OHLC Prices Over Time')
+    plt.legend()
+    plt.show()
+    
+def plot_volume_and_analyze(df: pd.DataFrame):
+
+    plt.bar(df.index, df['volume'], label='Volume', color='orange')
+    plt.xlabel('Timestamp')
+    plt.ylabel('Volume')
+    plt.title('Trading Volume Over Time')
+    plt.show()
+    
+def plot_log_return(df: pd.DataFrame):
+
+    plt.plot(df.index, df['Log_Return'], label='Log Return', color='green')
+    plt.xlabel('Timestamp')
+    plt.ylabel('Log Return')
+    plt.title('Log Returns Over Time')
+    plt.legend()
+    
+def plot_difference_return(df: pd.DataFrame):
+    plt.plot(df.index, df['Diff_Return'], label='Difference Return', color='red')
+    plt.xlabel('Timestamp')
+    plt.ylabel('Difference Return')
+    plt.title('Difference Returns Over Time')
+    plt.legend()
+    
+
+    
+
+    
+df1 = pd.read_csv("data/concatenated/AAPL/AAPL_intraday_5min_full.csv")
+df2 = pd.read_csv("data/concatenated/MSFT/MSFT_intraday_5min_full.csv")
+
+prepared_dfs = [df1, df2]
+for idx, df in enumerate(prepared_dfs):
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
+    df['volume'] = df['volume']/ 10**6
+    print(df.describe())
+    df['volume'] = df['volume'].rolling(window=24).sum()
+    df = df.set_index('timestamp')
+    df = df.loc['2020-11-01':'2023-12-01']
+    df['Log_Return'] = np.log(df['close'] / df['close'].shift(12))
+    df['Diff_Return'] = df['close'].diff()
+    prepared_dfs[idx] = df
+
+
+fig, axs = plt.subplots(2, 1)
+axs[0].hist(prepared_dfs[0]['Diff_Return'].dropna(), bins=100, color='red')
+axs[0].set_title('Difference Return Histogram for AAPL')
+
+axs[1].hist(prepared_dfs[1]['Diff_Return'].dropna(), bins=100, color='red')
+axs[1].set_title('Difference Return Histogram for MSFT')
+
+plt.show()
+plt.figure()
+plot_log_return(prepared_dfs[0])
+plt.figure()
+plot_log_return(prepared_dfs[1])
+plt.show()
+
+df = prepared_dfs[0]
+#plot_ohlc_and_analyze(df)
+plot_log_return(df)
+
+plot_volume_and_analyze(df)
 
 overall_change = df['close'].iloc[-1] - df['close'].iloc[0]
 percentage_change = (overall_change / df['close'].iloc[0]) * 100

@@ -1,0 +1,33 @@
+indicator_name;params;complexity;description
+Open;;10;Use Open price
+High ;;10;Use High price
+Low ;;10;Use Low price
+Close;;10;Use Close price
+Volume;;10;Use Volume
+SMA;[20, 50, 200];10;Calculate the simple moving average for Close price.
+LOGRET;[1, 5, 10, 20];10;Calculate the Log Return.
+EMA;[20, 50, 200];20;Calculate the Exponential Moving Average (EMA).
+Kurtosis;50;20;Calculate the Kurtosis of return over a rolling window.
+OBV;;20;Calculate the On-Balance Volume (OBV).
+DAY_OF_WEEK;;20;Extract the day of the week from the timestamp.
+MINUTE_OF_DAY;;20;Extract the minute of the day from the timestamp.
+DAILY_CLOSE;;20;Extract the daily closing price.
+VOL_SPIKE;[5, 10, 20, 40];20;Calculate Volume Spike as the ratio of current volume to average volume over a window.
+VOL_RATIO;[{'fast_period': 5, 'slow_period': 20}, {'fast_period': 10, 'slow_period': 40}, {'fast_period': 20, 'slow_period': 50}];20;Calculate Volume Ratio of n periods as the ratio of current volume to volume m periods ago.
+VOLATILITY_RETURN;[5, 10, 20, 40];20;Calculate Volatility Return as the standard deviation of log returns over a window.
+HL_RANGE;[5, 10, 20, 40];20;Calculate the High-Low Range over a rolling window.
+OC_RANGE;[5, 10, 20, 40];20;Calculate the Open-Close Range over a rolling window.
+TURNOVER;;20;Calculate Turnover as volume multiplied by close price.
+RSI;[14, 21];30;Calculate the Relative Strength Index (RSI).
+ROC;[10, 20];30;Calculate the Rate of Change (ROC).
+ADX;[14, 28];30;Calculate the Average Directional Movement Index (ADX).
+VI;14;30;Calculate the Vortex Indicator (VI) based on true range and vertex movement.
+DMI;[14, 28];30;Calculate the Directional Movement Index (DMI).
+CCI;[14];30;Calculate the Commodity Channel Index (CCI).
+MI;[{'ema_period': 9, 'sum_period': 25}];30;Calculate the Mass Index (MI) – a volatility indicator.
+STOCH;[{'window_size': 14, 'smooth_k': 3, 'smooth_d': 3}];30;Calculate the Stochastic Oscillator.
+BBANDS;[{'window_size': 20, 'num_std_dev': 2}, {'window_size': 50, 'num_std_dev': 2}];30;Calculate the Bollinger Bands.
+PVO;{'fast_period': 12, 'long_period': 26, 'signal_period': 9};30;Calculate the Percentage Volume Oscillator (PVO).
+MACD;{'fast_period': 12, 'slow_period': 26, 'signal_period': 9};30;Calculate the Moving Average Convergence Divergence (MACD).
+NATR;[14];30;Calculate the Normalized Average True Range (NATR).
+MFI;[14];30;Calculate the Money Flow Index (MFI).

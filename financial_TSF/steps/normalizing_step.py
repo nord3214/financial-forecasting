@@ -3,6 +3,8 @@ from financial_TSF.data_models.step_datamodel import StepResult
 from financial_TSF.steps.base_step import PipelineStep
 import pandas as pd
 
+from financial_TSF.visualization.feature_visualization import FeatureVisualization
+
 
 class ScalingStep(PipelineStep):
     def __init__(self, config) -> None:
@@ -13,6 +15,12 @@ class ScalingStep(PipelineStep):
         data = step_result.data 
         print("Received data for Normalizing Step with", len(data), "dataframes.")
         #need to normalize for deep learning models left out for now for random forest
+        
+        visualizer = FeatureVisualization(data)
+        # visualizer.visualize_feature_distributions()
+        visualizer.run()
+        
+        
         for i, df in enumerate(data):
             print(f"Scaling DataFrame {i+1} with shape: {df.shape}")
             

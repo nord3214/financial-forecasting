@@ -1,0 +1,33 @@
+indicator_name;params;complexity
+Open;;10
+High;;10
+Low;;10
+Close;;10
+Volume;;10
+SMA;[20, 50, 200];10
+LOGRET;[1, 5, 10, 20];10
+EMA;[20, 50, 200];20
+Kurtosis;50;20
+OBV;;20
+DAY_OF_WEEK;;20
+MINUTE_OF_DAY;;20
+DAILY_CLOSE;;20
+VOL_SPIKE;[5, 10, 20, 40];20
+VOL_RATIO;[{'fast_period': 5, 'slow_period': 20}, {'fast_period': 10, 'slow_period': 40}, {'fast_period': 20, 'slow_period': 50}];20
+VOLATILITY_RETURN;[5, 10, 20, 40];20
+HL_RANGE;[5, 10, 20, 40];20
+OC_RANGE;[5, 10, 20, 40];20
+TURNOVER;;20
+RSI;[14, 21];30
+ROC;[10, 20];30
+ADX;[14, 28];30
+VI;14;30
+DMI;[14, 28];30
+CCI;[14];30
+MI;[{'ema_period': 9, 'sum_period': 25}];30
+STOCH;[{'window_size': 14, 'smooth_k': 3, 'smooth_d': 3}];30
+BBANDS;[{'window_size': 20, 'num_std_dev': 2}, {'window_size': 50, 'num_std_dev': 2}];30
+PVO;{'fast_period': 12, 'long_period': 26, 'signal_period': 9};30
+MACD;{'fast_period': 12, 'slow_period': 26, 'signal_period': 9};30
+NATR;[14];30
+MFI;[14];30
