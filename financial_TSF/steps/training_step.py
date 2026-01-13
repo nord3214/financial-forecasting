@@ -14,7 +14,7 @@ class TrainingStep(PipelineStep):
         data = step_result.data
         print("Received data for Training Step with", len(data), "dataframes.")
 
-        model_is_deep = True
+        model_is_deep = False
 
         if model_is_deep:
             mlp = MLP()

@@ -1,8 +1,10 @@
+import math
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, root_mean_squared_error
 from financial_TSF.data_models.config_data_model import AppConfig
 from financial_TSF.data_models.step_datamodel import StepResult
 from financial_TSF.models.base_model import BaseModel
 from financial_TSF.steps.base_step import PipelineStep
+import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
@@ -14,46 +16,11 @@ class EvaluationStep(PipelineStep):
     def execute(self, step_result: StepResult) -> StepResult:
         
         # machine learning model evaluation
-
-        print("Metrics on Test Set:")
-        print("Mean Absolute Error (MAE): ", mean_absolute_error(step_result.y_test, step_result.y_test_pred))
-        print("Mean Sqaured Error (MSE): ", mean_squared_error(step_result.y_test, step_result.y_test_pred))
-        
-        print("R2 Score: ", r2_score(step_result.y_test, step_result.y_test_pred))  
-        
         step_result.metrics = self.compute_multistep_metrics(step_result.y_test, step_result.y_test_pred)
-        
-        
-        # print("Metrics on Train Set:")
-        # print("Mean Absolute Error (MAE): ", mean_absolute_error(step_result.y_train, step_result.y_train_pred))
-        # print("Mean Sqaured Error (MSE): ", mean_squared_error(step_result.y_train, step_result.y_train_pred))
-        # print("R2 Score: ", r2_score(step_result.y_train, step_result.y_train_pred))  
         
         # # economic model evaluation
         # # :TODO needs full rework of economic evaluation maybe with backtrader/ PyPortfolioOpt library
-        # df = pd.DataFrame()
-        # #current price
-        # df["price"] = step_result.X_test["close"]
-        # # future price +12 steps
-        # df["future_price"] = step_result.y_test
-        
-        # df["real_return"] = df["future_price"] - df["price"]
-        # df["prediction"] = np.sign(step_result.y_test_pred - df["future_price"])
-        # df["strategy_return"] = df["real_return"] * df["prediction"]
-        
-        # total_return = df["strategy_return"].sum()
-        # print("Total Strategy Return over Test Period: ", total_return)
-        
-        # # 3. Compute Sharpe (annualized)
-        # mean_ret = df['strategy_return'].mean()
-        # std_ret = df['strategy_return'].std()
-
-        # # number of trades per day
-        # trades_per_day = 13  
-        # annualization = np.sqrt(252 * trades_per_day)
-
-        # sharpe = (mean_ret / std_ret) * annualization
-        # print("Sharpe Ratio:", sharpe)
+    
         
         
         return step_result
@@ -65,23 +32,44 @@ class EvaluationStep(PipelineStep):
 
         return np.mean(np.sign(y_true.values) == np.sign(y_pred.values))
     
-    def calculate_sharpe_ratio(self, y_true, y_pred) -> float:
+    def calculate_sharpe_ratio(self, net_pnl_series: pd.Series) -> float:
         """
             Calculate annualized Sharpe Ratio
         """
-        signal = np.sign(y_pred.values)
-        pnl = signal * y_true.values
-        mean_ret = pnl.mean()
-        std_ret = pnl.std()
+        # calculta mean return easy with log returns because they are additive
+        mean_return = net_pnl_series.mean() 
         
-        # number of trades per year
-        trades_per_day = (6.5 * 60) / 5  # assuming 5-minute intervals in a 6.5-hour trading day
+        std_return = net_pnl_series.std()
+        
+        if std_return == 0:
+            return 0.0
+        
+        # risk free rate is assumed to be 0 for simplicity and short time frames
+        sharpe_per_period = mean_return / std_return
+        
+        # number of bars per day
+        bars_per_day = (6.5 * 60) / 5  # assuming 5-minute intervals in a 6.5-hour trading day
 
-        annualization = np.sqrt(252 * trades_per_day)
-
-        sharpe: float = (mean_ret / std_ret) * annualization
-        return sharpe
+        annualization_factor = np.sqrt(252 * bars_per_day)
+        
+        annualized_sharpe = sharpe_per_period * annualization_factor
+        
+        return annualized_sharpe
     
+    def calculate_percentage_return(self, cumulative_pnl: pd.Series) -> float:
+        """
+            Calculate percentage return from cumulative PnL series
+        """
+        percentage_return = (np.exp(cumulative_pnl.iloc[-1]) - 1) * 100 
+        return percentage_return 
+    
+    def calculate_number_of_trades(self, positions: pd.Series) -> float:
+        """
+            Calculate turnover factor from position series
+        """
+        total_trades = positions.diff().abs().sum() *2 # each trade involves both entry and exit
+        
+        return int(total_trades)
     
     
     def compute_multistep_metrics(self, y_true, y_pred) -> dict[str, float]:
@@ -90,6 +78,10 @@ class EvaluationStep(PipelineStep):
             y_true: shape (N, H)
             y_pred: shape (N, H)
         """
+        
+        # :TODO handle multi-ticker case properly - i.e percentage return is calculated ticker after ticker
+        
+        
         metrics = {}
         
         for i, horizon in enumerate(self.config.settings.forecast_horizon):
@@ -98,18 +90,51 @@ class EvaluationStep(PipelineStep):
             y_pred_horizon = pd.DataFrame(y_pred).iloc[:, i]
             
             
-            mae = mean_absolute_error(y_true_horizon, y_pred_horizon)
-            mse = mean_squared_error(y_true_horizon, y_pred_horizon)
-            rmse = root_mean_squared_error(y_true_horizon, y_pred_horizon)
-            r2 = r2_score(y_true_horizon, y_pred_horizon)
             
+            # use_naive_approach = False
+        
+            # if use_naive_approach:
+            #     y_pred_horizon = y_true_horizon.shift(horizon, fill_value=0)
+            #     # y_pred_horizon = np.roll(y_true, shift=-2, axis=1)
+                
+            #     print("Prediction: ", y_pred_horizon.head(20))
+            #     print("True: ", y_true_horizon.head(20))
+                
+            #     df = pd.concat([y_pred_horizon, y_true_horizon], axis=1)
+            #     print("Comparison: ", df.head(20))
+            
+            #trading simulation evaluation for each horizon
+            trading_simulator = TradingSimulation(self.config, horizon)  
+            backtest_results = trading_simulator.evaluate_horizon(y_true_horizon, y_pred_horizon, threshold=0.001)
+            
+            
+            # plt.plot(backtest_results.index, backtest_results['cumulative_pnl'], label=f'Cumulative PnL Horizon {horizon}'
+            #          )
+            # plt.show()
+            
+            
+            if not (backtest_results['y_true'].to_numpy() == y_true_horizon.to_numpy()).all():
+                raise ValueError("Mismatch between backtest y_true and input y_true_horizon cant reset index properly")
+            y_pred_traded = backtest_results['position'].abs() * y_pred_horizon.reset_index(drop=True)
+            y_true_traded = backtest_results['position'].abs() * y_true_horizon.reset_index(drop=True)
+            
+            #only the acutal traded values
+            y_true_traded = y_true_traded[y_true_traded != 0]
+            y_pred_traded = y_pred_traded[y_pred_traded != 0]
+            
+        
+
+            
+
             metrics[f"Horizon_{horizon}"] = {
-                "MAE": mae,
-                "MSE": mse,
-                "RMSE": rmse,
-                "R2": r2,
-                "Hit_Rate": self.compute_hitrate(y_true_horizon, y_pred_horizon),
-                "Sharpe_Ratio": self.calculate_sharpe_ratio(y_true_horizon, y_pred_horizon)
+                "MAE": mean_absolute_error(y_true_horizon, y_pred_horizon),
+                "MSE": mean_squared_error(y_true_horizon, y_pred_horizon),
+                "RMSE": root_mean_squared_error(y_true_horizon, y_pred_horizon),
+                "R2": r2_score(y_true_horizon, y_pred_horizon),
+                "Hit_Rate": self.compute_hitrate(y_true_traded, y_pred_traded),
+                "Sharpe_Ratio": self.calculate_sharpe_ratio(backtest_results['net_pnl']),
+                "Percentage_Return": self.calculate_percentage_return(backtest_results['cumulative_pnl']), 
+                "Number_of_Trades": self.calculate_number_of_trades(backtest_results['position'])
             }
             
         metrics["Global"] = {
@@ -122,3 +147,41 @@ class EvaluationStep(PipelineStep):
         print("Multi-step Forecasting Metrics: ", metrics)    
         return metrics
     
+class TradingSimulation:
+    def __init__(self, config: AppConfig, horizon: int):
+        self.config = config
+        self.trading_fee = 0.0002  # Example trading fee per trade 
+        self.horizon = horizon
+        
+    def evaluate_horizon(self, y_true, y_pred, threshold: float) -> pd.DataFrame:
+        """
+            Evaluate trading strategy based on predictions for a specific horizon
+        """
+        df = pd.DataFrame(index=range(len(y_pred)))
+        df['y_true'] = y_true.reset_index(drop=True)
+        df['y_pred'] = y_pred.reset_index(drop=True)
+                
+        df['position'] = 0
+        df['trade_costs'] = 0.0
+        
+        # loop to only enter one position at a time 
+        i = 0
+        while i < len(df):
+            current_pred = df['y_pred'].iloc[i]
+            
+            # Signal-Check
+            if current_pred > threshold:
+                df.loc[i, 'position'] = 1
+                df.loc[i, 'trade_costs'] = self.trading_fee * 2  
+                i += self.horizon  # skip next 'horizon' steps to simulate cooldown
+            elif current_pred < -threshold:
+                df.loc[i, 'position'] = -1
+                df.loc[i, 'trade_costs'] = self.trading_fee * 2
+                i += self.horizon  # skip next 'horizon' steps to simulate cooldown
+            else:
+                i += 1  # No signal, check next step
+                
+        df['net_pnl'] = (df['position'] * df['y_true']) - df['trade_costs']
+        df['cumulative_pnl'] = df['net_pnl'].cumsum()
+    
+        return df

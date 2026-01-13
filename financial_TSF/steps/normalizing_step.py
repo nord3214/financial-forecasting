@@ -16,9 +16,8 @@ class ScalingStep(PipelineStep):
         print("Received data for Normalizing Step with", len(data), "dataframes.")
         #need to normalize for deep learning models left out for now for random forest
         
-        visualizer = FeatureVisualization(data)
-        # visualizer.visualize_feature_distributions()
-        visualizer.run()
+        # visualizer = FeatureVisualization(data)
+        # visualizer.run()
         
         
         for i, df in enumerate(data):
