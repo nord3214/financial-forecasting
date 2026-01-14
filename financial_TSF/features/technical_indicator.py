@@ -49,6 +49,7 @@ class TechnicalIndicators:
         "HL_RANGE": self.hl_range,
         "OC_RANGE": self.oc_range,
         "TURNOVER": self.turnover,
+        "LOG_VOLUME": self.log_volume,
     }
 
     def apply_indicator(self, feature_name: str, params: list | dict | int):
@@ -407,6 +408,12 @@ class TechnicalIndicators:
         # data['Minute_of_Day_sin'] = df['Minute_of_Day_sin']
         # data['Minute_of_Day_cos'] = df['Minute_of_Day_cos']
         data[f'{feature_name}'] = df['Minute_of_Day']
+        return data
+    
+    def log_volume(self, feature_name, data) -> DataFrame:
+        """Calculate the Log Volume."""
+        data[f'{feature_name}'] = np.log(data['volume']+1)  # Adding 1 to avoid log(0)
+        
         return data
     
     

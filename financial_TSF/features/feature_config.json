@@ -221,6 +221,10 @@
     "TURNOVER": {
       "enabled": true,
       "complexity": 20
+    },
+    "LOG_VOLUME": {
+      "enabled": true,
+      "complexity": 10
     }
   }
 }
