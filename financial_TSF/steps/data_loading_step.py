@@ -58,7 +58,14 @@ class DataLoadingStep(PipelineStep):
                     print(f"Failed to load data from {csv_path}: {e}")
                     
             print("Data validation successful.")
+
+                
             step_result.data = df_tickers
+            
+            # for i in range(len(df_tickers)):
+            #     print(step_result.data[i].index)
+            
+            
             return step_result
     
     def __validate_data(self, df: DataFrame) -> bool:
