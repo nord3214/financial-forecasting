@@ -291,13 +291,17 @@ class TechnicalIndicators:
     def daily_closing_price(self, feature_name, data) -> DataFrame:
         """Extract the daily closing price."""
         df = data.copy()
-        df['date'] = df.index.date
-        daily_close = df.groupby(df['date'])['close'].last()
-        daily_close_prev = daily_close.shift(1)
-        data = data.merge(daily_close_prev.rename(f'{feature_name}'), left_on=df.index.date, right_on=daily_close_prev.index, how='left')
-        data.drop(columns=['key_0'], inplace=True)
-        # print(data[[f'{feature_name}', 'close']].tail(200))
-        
+
+        #daily close
+        daily_close = df.groupby(df.index.date)['close'].last()
+
+        #previous day close
+        daily_close_prev = daily_close.shift(1).rename(feature_name)
+
+        # df.index.date as key to look up in the daily_close_prev series
+        data[feature_name] = data.index.date
+        data[feature_name] = data[feature_name].map(daily_close_prev)
+
         return data
     
     def turnover(self, feature_name, data) -> DataFrame:
