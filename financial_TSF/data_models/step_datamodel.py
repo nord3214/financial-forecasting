@@ -9,7 +9,9 @@ class SplitData(TypedDict):
     X_train: Any
     X_test: Any
     y_train: Any
+    y_train_pred: Any
     y_test: Any
+    y_test_pred: Any
     x_scaler: Any
     y_scaler: Any
 

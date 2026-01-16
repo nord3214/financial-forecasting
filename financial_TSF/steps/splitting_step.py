@@ -54,7 +54,9 @@ class SplittingStep(PipelineStep):
                 "X_train": X_train,
                 "X_test": X_test,
                 "y_train": y_train,
+                "y_train_pred": None,
                 "y_test": y_test,
+                "y_test_pred": None,
                 "x_scaler": None,
                 "y_scaler": None
             })
