@@ -20,7 +20,7 @@ class EvaluationStep(PipelineStep):
         step_result.metrics = self.compute_multistep_metrics(step_result.y_test, step_result.y_test_pred, step_result)
         
         # # economic model evaluation
-        sim = TopKSimulator(step_result.split_data, transaction_cost_bps=2.0)
+        sim = TopKSimulator(step_result.split_data, transaction_cost_bps=1.0)
         sim.prepare_data(horizon_col=f"target_{self.config.settings.forecast_horizon[0]}")
         
         result_df = sim.run_simulation(k=5)
@@ -222,6 +222,7 @@ class TradingSimulation:
         return df
 
 class TopKSimulator:
+    # :TODO maybe make more performant by using vectorized operations instead of loops
     def __init__(self, split_data_list: List[SplitData], transaction_cost_bps: float = 2.0):
         """        
         :param split_data_list: corresponding dict of tickers 
@@ -232,7 +233,7 @@ class TopKSimulator:
         self.data: List[SplitData] = split_data_list
         self.cost_pct = transaction_cost_bps / 10000  # convert bps to decimal percentage
         
-    def prepare_data(self, horizon_col: str, actual_return_col: Optional[str] = None):
+    def prepare_data(self, horizon_col: str, actual_return_col: str = 'return_next_interval'):
         """
         Transforms tickerdata into global DataFrame for Top-K evaluation
         :param horizon_col: column name for predicted returns at specific horizon
@@ -240,10 +241,7 @@ class TopKSimulator:
         if None - hold to maturity used
         if str column name need to specify log returns of current interval 
         """
-        
-        if actual_return_col is None:
-            actual_return_col = horizon_col
-            
+                    
         pred_frames = []
         actual_frames = []
         
@@ -257,16 +255,21 @@ class TopKSimulator:
             y_test = item['y_test']
             y_test_pred = item['y_test_pred']
             
+            actual_unscaled = item['log_return_horizon1']
+            
             # inverse transform predictions and actuals
             pred_unscaled = y_scaler.inverse_transform(y_test_pred)
-            actual_unscaled = y_scaler.inverse_transform(y_test)
             
             # convert back to DataFrames with original timestamp Index and Column names
             df_pred = pd.DataFrame(pred_unscaled, columns=y_test_pred.columns, index=y_test_pred.index)
-            df_actual = pd.DataFrame(actual_unscaled, columns=y_test.columns, index=y_test.index)
+            # :TODO have to set index to y_test index??? 
+            df_actual = actual_unscaled.loc[y_test.index]
+            if len(df_actual) != len(df_pred):
+                raise ValueError(f"Length mismatch between actual returns and predicted returns for ticker {ticker_name}")
             
             # only consider the specific horizon column
             series_pred = df_pred[horizon_col].rename(ticker_name)
+            # use actual log return over next interval for economic
             series_actual = df_actual[actual_return_col].rename(ticker_name)
             
             pred_frames.append(series_pred)
@@ -317,10 +320,12 @@ class TopKSimulator:
             short_tickers: list[str] = valid_preds.nsmallest(k).index.to_list()
             
             # get actual returns for selected tickers
-            actual_returns = self.return_matrix.loc[timestamp] # type: ignore
+            actual_log_returns = self.return_matrix.loc[timestamp] # type: ignore
+            actual_simple_returns = np.exp(actual_log_returns) - 1  # convert log returns to simple returns
             
-            avg_long_return = actual_returns[long_tickers].mean()
-            avg_short_return = actual_returns[short_tickers].mean()
+            
+            avg_long_return = actual_simple_returns[long_tickers].mean()
+            avg_short_return = actual_simple_returns[short_tickers].mean()
             
             # assuming 50% allocation to longs and shorts respectively
             gross_return = 0.5 * avg_long_return - 0.5 * avg_short_return

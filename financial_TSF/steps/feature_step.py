@@ -62,7 +62,7 @@ class FeatureStep(PipelineStep):
                     "y_test_pred": None,
                     "x_scaler": None,
                     "y_scaler": None,             
-                    "log_return_horizon1": log_return_horizon1['return_next_interval'],
+                    "log_return_horizon1": log_return_horizon1[['return_next_interval']],
                 })
                 
                 
