@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 from matplotlib import pyplot as plt
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, root_mean_squared_error
 from financial_TSF.data_models.config_data_model import AppConfig
@@ -121,10 +121,7 @@ class EvaluationStep(PipelineStep):
             # :TODO convert to dataframe or different indexing!
             y_true_horizon = pd.DataFrame(y_true).iloc[:, i]
             y_pred_horizon = pd.DataFrame(y_pred).iloc[:, i]
-            
-            print(y_true_horizon.head(10))
-            print(step_result.split_data[0]['y_test'].head(10))
-            
+                     
             
             # use_naive_approach = False
         

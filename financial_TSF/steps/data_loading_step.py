@@ -53,7 +53,7 @@ class DataLoadingStep(PipelineStep):
                         raise Exception("Data validation failed for file: " + str(csv_path))
                     
                     df_tickers.append(df)
-                    print(f"Loaded data from {csv_path}, shape: {df.shape}")
+                    # print(f"Loaded data from {csv_path}, shape: {df.shape}")
                 except Exception as e:
                     print(f"Failed to load data from {csv_path}: {e}")
                     

@@ -1,9 +1,7 @@
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
 from financial_TSF.data_models.config_data_model import AppConfig
 from financial_TSF.data_models.step_datamodel import StepResult
-from financial_TSF.models.rf.random_forest_regressor import SETTINGS
 from financial_TSF.steps.base_step import PipelineStep
 
 
@@ -26,8 +24,6 @@ class SplittingStep(PipelineStep):
         for i, ticker_df in enumerate(step_result.data):
             step_result.data[i], target_column_names = self.calculate_target_columns(ticker_df)
             
-            # print(step_result.data[i].head(10))
-            # print("Index is: ", step_result.data[i].index)
             # remove rows with NaN values created by shifting for target columns/ or feature calculation
             step_result.data[i] = step_result.data[i].dropna()
             
@@ -111,8 +107,6 @@ class SplittingStep(PipelineStep):
         
         X_train, y_train = X[train_mask], y[train_mask]
         X_test, y_test = X[test_mask], y[test_mask]
-        # print("Size of training data:", X_train.shape, y_train.shape)
-        # print("Size of testing data:", X_test.shape, y_test.shape)
         return X_train, X_test, y_train, y_test
 
         

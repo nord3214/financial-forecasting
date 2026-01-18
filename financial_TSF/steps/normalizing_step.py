@@ -15,20 +15,14 @@ class ScalingStep(PipelineStep):
         Scales data using the corresponding scaler
         !!! Also removes ticker column for now !!!
         """
-        data = step_result.data 
-        print("Received data for Normalizing Step with", len(data), "dataframes.")
-        #need to normalize for deep learning models left out for now for random forest
+        print("Received data for Normalizing Step with", len(step_result.split_data), "dataframes.")
         
         # visualizer = FeatureVisualization(data)
         # visualizer.run()
         
         for idx, split_data in enumerate(step_result.split_data):
             
-            # X_ticker = step_result.X_train.loc[step_result.X_train['ticker'] == ticker_name]
-            # y_ticker = step_result.y_train.loc[step_result.y_train.index.isin(X_ticker.index)]
-            
-            
-                        
+           
             x_scaler = self.get_scaler()
             y_scaler = self.get_scaler()
             
@@ -60,7 +54,7 @@ class ScalingStep(PipelineStep):
             # print(f"Scaled y_test: ", step_result.split_data[idx]['y_test'].describe().round(5)) 
             
             
-            # :TODO put all together for training step again :)
+        # :TODO put all together for training step again :)
         # for backwards compatibility done here
         step_result.X_train = pd.concat([step_result.split_data[i]['X_train'] for i in range(len(step_result.split_data))], axis=0)
         step_result.X_test = pd.concat([step_result.split_data[i]['X_test'] for i in range(len(step_result.split_data))], axis=0)
@@ -87,9 +81,6 @@ class ScalingStep(PipelineStep):
 
         scaler.fit(df_train)
         df = DataFrame(scaler.transform(df.select_dtypes(include=['float64', 'int64'])), columns=df.columns, index=df.index)
-        # print("train df: ", df[:train_size].describe().round(2))
-        # print("test df: ", df[train_size:].describe().round(2))
-        # print("Overall df: ", df.describe().round(2))
         
         return df
     

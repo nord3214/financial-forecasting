@@ -1,13 +1,10 @@
 import json
 from typing import Any
-from numpy import float64
-from pandas import DataFrame, Series
+from pandas import DataFrame
 import pandas as pd
 import numpy as np
 import talib
-
 from financial_TSF import data
-from financial_TSF.data_models.feature_data_model import FeaturesConfig
 
 
 
@@ -99,7 +96,7 @@ class TechnicalIndicators:
         if 10 not in complexity_levels:
             self.data = self.remove_basic_columns_from_dataset(self.data)
             
-        print("Final data after technical indicators:\n", self.data.info())
+        # print("Final data after technical indicators:\n", self.data.info())
             
         return self.data
     
@@ -108,70 +105,7 @@ class TechnicalIndicators:
         # :TODO somewhere remove index timestamp
         basic_columns = ['open', 'high', 'low', 'close', 'volume', 'ticker']
         
-        return data.drop(columns=basic_columns)
-                
-    # def calculate_indicators_old(self, data: DataFrame) -> DataFrame:
-    #     """Calculate technical indicators based on the configuration."""
-    #     for indicator in self.config  .technical_indicators.trend_indicators.indicators:
-            
-    #         print(f"Calculating {indicator}...")
-    #         if indicator == "SMA":
-    #         # :TODO need to use features from config
-    #             data = self.simple_moving_average(data, window_size=20)
-    #             # data = self.simple_moving_average_ta_lib(data, window_size=20)
-                
-    #             data = self.simple_moving_average(data, window_size=50)
-    #             # data = self.simple_moving_average_ta_lib(data, window_size=50)
-    #             data = self.simple_moving_average(data, window_size=200)
-    #             # data = self.simple_moving_average_ta_lib(data, window_size=200)
-                
-    #             data = self.exponential_moving_average(data, window_size=20)
-    #             data = self.exponential_moving_average(data, window_size=50)    
-    #             data = self.exponential_moving_average(data, window_size=200)
-                
-    #             data = self.average_directional_movement_index(data, window_size=14)
-
-    #             # data = self.moving_average_convergence_divergence(data)
-    #             data = self.directional_movement_index(data, window_size=14)
-    #             data = self.relative_strength_index(data, window_size=14)
-    #             data = self.williams_percent_range(data, window_size=14)
-    #             data = self.rate_of_change(data, window_size=10)
-    #             data = self.bollinger_bands(data, window_size=20, num_std_dev=2)
-    #             data = self.normalized_average_true_range(data, window_size=14)
-    #             data = self.on_balance_volume(data)
-                
-    #             data = self.log_return(data)
-                
-                
-                
-                
-                
-        
-        # data['timestamp'] = pd.to_datetime(data['timestamp'])
-        # data.set_index('timestamp', inplace=True)
-        
-        # Agregating to daily data
-        # data = data.resample('D').agg({
-        #     "open": "first",
-        #     "high": "max",
-        #     "low": "min",
-        #     "close": "last",
-        #     "volume": "sum",
-        #     "ticker": "first"
-        # })
-
-        data.info()
-        print(data.tail())
-        
-        
-        # daily aggregated data
-        
-        print(data["Log_Return"].describe())
-            
-        return data
-        
-
-
+        return data.drop(columns=basic_columns)            
 
     def simple_moving_average(self, feature_name, data, window_size: int) -> DataFrame:
         """Calculate the moving average for Close price."""

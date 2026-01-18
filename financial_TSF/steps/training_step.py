@@ -10,9 +10,6 @@ class TrainingStep(PipelineStep):
         self.config = config
         
     def execute(self, step_result: StepResult) -> StepResult:
-        # :TODO eventually implement splitting logic earlier previous step in pipeline
-        data = step_result.data
-        print("Received data for Training Step with", len(data), "dataframes.")
 
         model_is_deep = False
 
@@ -28,5 +25,4 @@ class TrainingStep(PipelineStep):
             step_result.y_test, step_result.y_test_pred, step_result.y_train, step_result.y_train_pred = model_instance.predict(step_result)
             
         print("Training completed.")
-        step_result.data = data
         return step_result

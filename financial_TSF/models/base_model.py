@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-
 from financial_TSF.data_models.step_datamodel import StepResult
 
 

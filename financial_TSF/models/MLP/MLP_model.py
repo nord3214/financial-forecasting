@@ -1,5 +1,3 @@
-
-
 import torch
 from financial_TSF.data_models.step_datamodel import StepResult
 from financial_TSF.models.base_model import BaseModel

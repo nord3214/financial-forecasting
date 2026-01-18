@@ -28,6 +28,7 @@ class Pipeline:
     def run(self, step_result: StepResult):
         step_result.model_instance = self.model
         for step in self.steps:
+            print("--------------------------------------------------")
             print(f"Executing step: {step.__class__.__name__}")
             step_result = step.execute(step_result)
         return step_result

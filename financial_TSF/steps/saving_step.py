@@ -2,7 +2,6 @@ from datetime import datetime
 import json
 from pathlib import Path
 import shutil
-
 import joblib
 import pandas as pd
 from financial_TSF.data_models.config_data_model import AppConfig

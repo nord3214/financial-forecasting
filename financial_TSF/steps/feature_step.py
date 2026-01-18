@@ -3,9 +3,8 @@ from pathlib import Path
 from typing import Any, Dict
 import numpy as np
 import pandas as pd
-
 from pandas import DataFrame
-from financial_TSF.data_models.config_data_model import AppConfig, FeaturesConfig
+from financial_TSF.data_models.config_data_model import AppConfig
 from financial_TSF.features.technical_indicator import TechnicalIndicators
 from financial_TSF.data_models.step_datamodel import StepResult
 from financial_TSF.steps.base_step import PipelineStep
@@ -43,7 +42,7 @@ class FeatureStep(PipelineStep):
 
             # Go over all dataframes(different Tickers) and apply technical indicators
             for i, df in enumerate(data):
-                print(f"Processing DataFrame {i+1} with shape: {df.shape}")
+                # print(f"Processing DataFrame {i+1} with shape: {df.shape}")
                 
                 current_ticker = df["ticker"].iloc[0]
                 
@@ -73,10 +72,10 @@ class FeatureStep(PipelineStep):
                 
 
                 data[i] = data[i].round(10)
-                print(f"Processed DataFrame {i+1}, new shape: {data[i].shape}")
+                # print(f"Processed DataFrame {i+1}, new shape: {data[i].shape}")
 
-                with pd.option_context('display.max_columns', None):
-                    print(data[i].describe())
+                # with pd.option_context('display.max_columns', None):
+                #     print(data[i].describe())
                 
                 self.__save_processed_data(current_ticker, data[i])
                 
@@ -84,7 +83,6 @@ class FeatureStep(PipelineStep):
             print("Columns after technical indicators: ", columns)
 
             step_result.data = data
-            print(f"New calculated features with {[df.shape for df in data]} shapes.")
             
             # for df in data:
             #     print("Index is", df.index)
@@ -101,21 +99,21 @@ class FeatureStep(PipelineStep):
     
     def __save_processed_data(self, ticker: str, data: DataFrame) -> None:
         # data = data.round(10)
-        print("Dataframe: ", data.tail(30))
-        print("Saving processed data for ticker:", ticker)
+        # print("Dataframe: ", data.tail(30))
+        # print("Saving processed data for ticker:", ticker)
         
         save_path = f'{self.config.data.processed_csv}/{ticker}/{ticker}_intraday_5min_processed.parquet'
         Path(save_path).parent.mkdir(parents=True, exist_ok=True)
         data.to_parquet(save_path, index=False)
         # data.to_csv(save_path, index=False, float_format='%.15g')
-        print(f"Processed data saved to {save_path}")
+        # print(f"Processed data saved to {save_path}")
         
     def __load_processed_data(self, ticker: str) -> DataFrame:
         load_path = f'{self.config.data.processed_csv}/{ticker}/{ticker}_intraday_5min_processed.parquet'
-        print("Loading processed data for ticker:", ticker)
+        # print("Loading processed data for ticker:", ticker)
         # data = pd.read_csv(load_path)
         data = pd.read_parquet(load_path)
-        print(f"Processed data loaded from {load_path}, shape: {data.shape}")
+        # print(f"Processed data loaded from {load_path}, shape: {data.shape}")
         return data
        
         
