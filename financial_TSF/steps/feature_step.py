@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 from typing import Any, Dict
+import numpy as np
 import pandas as pd
 
 from pandas import DataFrame
@@ -45,11 +46,32 @@ class FeatureStep(PipelineStep):
                 print(f"Processing DataFrame {i+1} with shape: {df.shape}")
                 
                 current_ticker = df["ticker"].iloc[0]
-                # Go over all technical indicators from config and apply them
                 
+                # also calculate log return of current interval of ticker (for economic evaluation)
+                log_return_horizon1 = pd.DataFrame(index=df.index)
+                log_return_horizon1['actual_log_return'] = np.log(df['close'] / df['close'].shift(1))
+                log_return_horizon1['return_next_interval'] = log_return_horizon1['actual_log_return'].shift(-1)
+                
+                step_result.split_data.append({
+                    "ticker_name": current_ticker,
+                    "X_train": None,
+                    "X_test": None, 
+                    "y_train": None,
+                    "y_train_pred": None,
+                    "y_test": None,
+                    "y_test_pred": None,
+                    "x_scaler": None,
+                    "y_scaler": None,             
+                    "log_return_horizon1": log_return_horizon1['return_next_interval'],
+                })
+                
+                
+                # Go over all technical indicators from config and apply them
                 tech_indicators = TechnicalIndicators(self.config.features.feature_config_path, df)
                 
                 data[i] = tech_indicators.calculate_indicators(self.complexity_levels)
+                
+
                 data[i] = data[i].round(10)
                 print(f"Processed DataFrame {i+1}, new shape: {data[i].shape}")
 
@@ -61,9 +83,11 @@ class FeatureStep(PipelineStep):
             columns = data[0].columns.tolist()
             print("Columns after technical indicators: ", columns)
 
-                            
             step_result.data = data
             print(f"New calculated features with {[df.shape for df in data]} shapes.")
+            
+            # for df in data:
+            #     print("Index is", df.index)
             
             
             return step_result

@@ -1,6 +1,8 @@
+from typing import List, Optional
+from matplotlib import pyplot as plt
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, root_mean_squared_error
 from financial_TSF.data_models.config_data_model import AppConfig
-from financial_TSF.data_models.step_datamodel import StepResult
+from financial_TSF.data_models.step_datamodel import SplitData, StepResult
 from financial_TSF.steps.base_step import PipelineStep
 import pandas as pd
 import numpy as np
@@ -18,8 +20,14 @@ class EvaluationStep(PipelineStep):
         step_result.metrics = self.compute_multistep_metrics(step_result.y_test, step_result.y_test_pred, step_result)
         
         # # economic model evaluation
-    
+        sim = TopKSimulator(step_result.split_data, transaction_cost_bps=2.0)
+        sim.prepare_data(horizon_col=f"target_{self.config.settings.forecast_horizon[0]}")
         
+        result_df = sim.run_simulation(k=5)
+        metrics = sim.get_metrics()
+        print("Top-K Trading Strategy Metrics: ", metrics)
+        
+        sim.plot_equity_curve()
         
         return step_result
     
@@ -212,3 +220,186 @@ class TradingSimulation:
         df['cumulative_pnl'] = df['net_pnl'].cumsum()
     
         return df
+
+class TopKSimulator:
+    def __init__(self, split_data_list: List[SplitData], transaction_cost_bps: float = 2.0):
+        """        
+        :param split_data_list: corresponding dict of tickers 
+        :type split_data_list: List[SplitData]
+        :param transaction_cost_bps: cost per transaction(buy or sell) in basis points (1 bps = 0.01%)
+        :type transaction_cost_bps: float
+        """
+        self.data: List[SplitData] = split_data_list
+        self.cost_pct = transaction_cost_bps / 10000  # convert bps to decimal percentage
+        
+    def prepare_data(self, horizon_col: str, actual_return_col: Optional[str] = None):
+        """
+        Transforms tickerdata into global DataFrame for Top-K evaluation
+        :param horizon_col: column name for predicted returns at specific horizon
+        :param actual_return_col: optional column name for actual returns at specific horizon 
+        if None - hold to maturity used
+        if str column name need to specify log returns of current interval 
+        """
+        
+        if actual_return_col is None:
+            actual_return_col = horizon_col
+            
+        pred_frames = []
+        actual_frames = []
+        
+        print(f"Aggregating data for signal: {horizon_col} ...")
+        
+        for item in self.data:
+            ticker_name = item['ticker_name']
+            
+            # get scaler and data
+            y_scaler = item['y_scaler']
+            y_test = item['y_test']
+            y_test_pred = item['y_test_pred']
+            
+            # inverse transform predictions and actuals
+            pred_unscaled = y_scaler.inverse_transform(y_test_pred)
+            actual_unscaled = y_scaler.inverse_transform(y_test)
+            
+            # convert back to DataFrames with original timestamp Index and Column names
+            df_pred = pd.DataFrame(pred_unscaled, columns=y_test_pred.columns, index=y_test_pred.index)
+            df_actual = pd.DataFrame(actual_unscaled, columns=y_test.columns, index=y_test.index)
+            
+            # only consider the specific horizon column
+            series_pred = df_pred[horizon_col].rename(ticker_name)
+            series_actual = df_actual[actual_return_col].rename(ticker_name)
+            
+            pred_frames.append(series_pred)
+            actual_frames.append(series_actual)
+            
+        # concatenate all ticker series into a single DataFrame on axis 1 one row per timestamp with all tickers
+        self.signal_matrix: pd.DataFrame = pd.concat(pred_frames, axis=1)
+        self.return_matrix: pd.DataFrame = pd.concat(actual_frames, axis=1)
+        
+        # :TODO think about missing data handling here!
+        # self.signal_matrix.dropna(axis=0, how='any', inplace=True)
+        # self.returns_matrix = self.returns_matrix.reindex(self.signal_matrix.index)
+        
+        print(f"Data prepared. Time steps: {self.signal_matrix.shape[0]}, Tickers: {self.signal_matrix.shape[1]}")
+        
+    def run_simulation(self, k:int = 5):
+        """
+        Run Top-K trading simulation based on prepared signal and actual return matrice 
+        """
+        
+        if not hasattr(self, 'signal_matrix') or not hasattr(self, 'return_matrix'):
+            raise ValueError("Data not prepared. Call prepare_data() before running simulation.")
+        
+        portfolio_returns = []
+        timestamps = []
+        turnover_tracker = []
+        
+        prev_longs = set()
+        prev_shorts = set()
+        
+        print(f"Simulation Top-{k} Long/Short trading strategy...")
+        
+        # calculate returns for each time step
+        for timestamp, row_preds in self.signal_matrix.iterrows():
+            
+            # NaN values dropped for ranking
+            valid_preds = row_preds.dropna()
+            
+            # check if enough valid tickers for trading
+            if len(valid_preds) < k*2: 
+                portfolio_returns.append(0.0)
+                timestamps.append(timestamp)
+                continue
+            
+            # select str top-k and bottom-k tickers to trade 
+            # :TODO handle if best is negative or worst is positive - no trade should be made in that case
+            long_tickers: list[str] = valid_preds.nlargest(k).index.to_list()
+            short_tickers: list[str] = valid_preds.nsmallest(k).index.to_list()
+            
+            # get actual returns for selected tickers
+            actual_returns = self.return_matrix.loc[timestamp] # type: ignore
+            
+            avg_long_return = actual_returns[long_tickers].mean()
+            avg_short_return = actual_returns[short_tickers].mean()
+            
+            # assuming 50% allocation to longs and shorts respectively
+            gross_return = 0.5 * avg_long_return - 0.5 * avg_short_return
+            
+            current_longs = set(long_tickers)
+            current_shorts = set(short_tickers)
+            
+            # how many new trades are made compared to previous positions
+            changes: int = len(current_longs-prev_longs) + len(current_shorts - prev_shorts)
+            
+            # weighting of turnover cost assuming equal weight(invest) per position
+            turnover_cost = ((changes*2) / (2*k)) * self.cost_pct
+            
+            net_return = gross_return - turnover_cost
+            
+            portfolio_returns.append(net_return)
+            timestamps.append(timestamp)
+            
+            prev_longs = current_longs
+            prev_shorts = current_shorts
+            
+        # result DataFrame
+        self.results = pd.DataFrame({
+            'net_return': portfolio_returns
+        }, index=timestamps)
+        
+        # cumulative return ???
+        self.results['cumulative_return'] = (1 + self.results['net_return']).cumprod()
+        
+    def plot_equity_curve(self):
+        """
+        Plot equity curve of the Top-K trading strategy
+        """
+        if not hasattr(self, 'results'):
+            raise ValueError("Simulation not run yet. Call run_simulation() before plotting.")
+
+        plt.figure(figsize=(12, 6))
+        plt.plot(self.results.index, self.results['cumulative_return'], label='Top-K L/S Strategy')
+        plt.title('Equity Curve (Net of Costs)')
+        plt.ylabel('Cumulative Return')
+        plt.xlabel('Date')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+        
+    def get_metrics(self):
+        rets = self.results['net_return']
+        
+       # Annualization factor assuming 252 trading days and 78 5-minute intervals per day
+        intervals_per_year = 252 * 78 
+        
+        sharpe = (rets.mean() / rets.std()) * np.sqrt(intervals_per_year)
+        total_return = self.results['cumulative_return'].iloc[-1] - 1
+        
+        # Max Drawdown
+        cum = self.results['cumulative_return']
+        peak = cum.cummax()
+        drawdown = (cum - peak) / peak
+        max_dd = drawdown.min()
+        
+        return {
+            "Sharpe Ratio": round(sharpe, 2),
+            "Total Return %": round(total_return * 100, 2),
+            "Max Drawdown %": round(max_dd * 100, 2)
+        }
+        
+    
+            
+            
+            
+            
+                
+            
+            
+            
+
+        
+        
+        
+            
+            
+            

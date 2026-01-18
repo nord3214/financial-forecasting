@@ -9,7 +9,7 @@ from financial_TSF.steps.base_step import PipelineStep
 
 class SplittingStep(PipelineStep):
     def __init__(self, config: AppConfig):
-        self.config = config
+        self.forecast_horizons = config.settings.forecast_horizon
         self.train_size = 0.8
         
     def execute(self, step_result: StepResult) -> StepResult:
@@ -43,46 +43,30 @@ class SplittingStep(PipelineStep):
             
             X_train, X_test, y_train, y_test = self.split_data(ticker_df, split_point_timestamp=split_point_timestamp, target_column_names=target_column_names)
 
+            ticker_name = ticker_df["ticker"].iloc[0]
+            if X_train.empty:
+                print(f"Not enough data for ticker {ticker_name} to split. Wont use this ticker for training/testing.")
+                step_result.ticker_names.remove(ticker_name)
+                # also remove corresponding split_data entry of this ticker
+                step_result.split_data = [data for data in step_result.split_data if data["ticker_name"] != ticker_name]
+                continue
             
             step_result.X_train.append(X_train)
             step_result.X_test.append(X_test)
             step_result.y_train.append(y_train)
             step_result.y_test.append(y_test)
             
-            step_result.split_data.append({
-                "ticker_name": ticker_df["ticker"].iloc[0],                
-                "X_train": X_train,
-                "X_test": X_test,
-                "y_train": y_train,
-                "y_train_pred": None,
-                "y_test": y_test,
-                "y_test_pred": None,
-                "x_scaler": None,
-                "y_scaler": None
-            })
-        
             
-        # concatenate all dataframes into one for splitting 
-        # df = pd.concat(step_result.data, axis = 0)
-        # print("all dfs together: ", df.head(10))
-        # print("all dfs together sorter: ", df.sort_index().head(10))
-        
-        # if "ticker" in df.columns:
-        #     df = df.drop("ticker", axis=1)
+            for data in step_result.split_data:
+                if data["ticker_name"] == ticker_name:
+                    data["X_train"] = X_train
+                    data["X_test"] = X_test
+                    data["y_train"] = y_train
+                    data["y_test"] = y_test
             
         # clear step_result data to save memory and avoid confustion because no more needed
         step_result.data = []
-
-            
-        # step_result.X_train, step_result.X_test, step_result.y_train, step_result.y_test = self.split_data(df, target_column_names=target_column_names)
         
-        
-        # y = df.iloc[:, -len(self.config.settings.forecast_horizon):]
-        # X = df.iloc[:, :-len(self.config.settings.forecast_horizon)]
-        
-        
-        # step_result.X_train, step_result.X_test, step_result.y_train, step_result.y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
-
         
         return step_result
     
@@ -90,7 +74,7 @@ class SplittingStep(PipelineStep):
         # save all target column names to return
         target_column_names = []
             # :TODO handle target creation earlier in the pipeline maybe in feature step
-        for horizon in self.config.settings.forecast_horizon:
+        for horizon in self.forecast_horizons:
             column_name = f"target_{horizon}"
             
             df_temp = df.copy()

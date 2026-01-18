@@ -14,6 +14,7 @@ class SplitData(TypedDict):
     y_test_pred: Any
     x_scaler: Any
     y_scaler: Any
+    log_return_horizon1: Any
 
 @dataclass
 class StepResult:
