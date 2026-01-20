@@ -18,6 +18,8 @@ scikit-learn = ">=1.7.2,<2.0.0"
 seaborn = ">=0.13.2,<0.14.0"
 ratelimit = ">=2.2.1,<3.0.0"
 pyarrow = "^22.0.0"
+stattools = "^0.0.4"
+statsmodels = "^0.14.6"
 
 
 

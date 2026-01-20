@@ -8,6 +8,7 @@ from financial_TSF.data_models.config_data_model import AppConfig
 from financial_TSF.features.technical_indicator import TechnicalIndicators
 from financial_TSF.data_models.step_datamodel import StepResult
 from financial_TSF.steps.base_step import PipelineStep
+from financial_TSF.visualization.financial_eda import FinancialEDA
 
 
 class FeatureStep(PipelineStep):
@@ -81,6 +82,28 @@ class FeatureStep(PipelineStep):
                 
             columns = data[0].columns.tolist()
             print("Columns after technical indicators: ", columns)
+            
+            # Do EDA here
+            eda = FinancialEDA(data[0])  # Just use the first ticker for EDA
+            # eda.plot_time_series(column='close', title=f'Close Price of {step_result.ticker_names[0]}')
+            
+            # eda.check_adfuller('close')
+            # eda.check_adfuller('LOGRET_1')
+            #eda.plot_distribution(column='LOGRET_1', range=(-0.025, 0.025))
+            #eda.plot_distribution(column='volume', range=(0, 1.5e7))
+            #eda.plot_distribution(column='LOG_VOLUME')
+            
+            # for feature_col in eda.df.columns:
+            #     if feature_col not in ['ticker']:
+            #         eda.check_adfuller(feature_col)
+                    
+            # feature_cols = eda.df.columns.tolist()       
+            # eda.plot_correlation(feature_cols=[col for col in eda.df.columns if col not in ['ticker']])
+            
+            
+            
+            
+            
 
             step_result.data = data
             
