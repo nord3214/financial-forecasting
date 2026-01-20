@@ -19,15 +19,15 @@ class TechnicalIndicators:
         
             
         self.feature_registry = {
-        "SMA": self.simple_moving_average,
-        "EMA": self.exponential_moving_average,
+        "SMA": self.simple_moving_average_stationary,
+        "EMA": self.exponential_moving_average_stationary,
         "RSI": self.relative_strength_index,
         "ROC": self.rate_of_change,
         "ADX": self.average_directional_movement_index,
         "DMI": self.directional_movement_index,
-        "BBANDS": self.bollinger_bands,
+        "%BBANDS": self.bollinger_bands_stationary,
         "NATR": self.normalized_average_true_range,
-        "OBV": self.on_balance_volume,
+        "OBV": self.on_balance_volume_stationary,
         "LOGRET": self.log_return,
         "VI": self.vortex_indicator,
         "STOCH": self.stochastic_oscillator,
@@ -39,7 +39,7 @@ class TechnicalIndicators:
         "MFI": self.money_flow_index,
         "DAY_OF_WEEK": self.day_of_week,
         "MINUTE_OF_DAY": self.min_of_day,
-        "DAILY_CLOSE": self.daily_closing_price,
+        "DAILY_CLOSE": self.daily_closing_price_stationary,
         "VOL_SPIKE": self.volume_spike,
         "VOL_RATIO": self.volume_ratio,
         "VOLATILITY_RETURN": self.volatility_return,
@@ -113,15 +113,29 @@ class TechnicalIndicators:
         
         return data
     
-    def simple_moving_average_ta_lib(self, feature_name, data, window_size: int) -> DataFrame:
-        """Calculate the moving average for Close price using TA-Lib."""
-        data[f'{feature_name}_{window_size}_ta_lib'] = talib.SMA(data['close'], timeperiod=window_size)
-    
+    def simple_moving_average_stationary(self, feature_name, data, window_size: int) -> DataFrame:
+        """Calculate the moving average for Close price."""
+        df = data.copy()
+        df['SMA'] = df['close'].rolling(window=window_size).mean()
+        df['log_SMA_diff'] = np.log(df['close'] / df['SMA'])
+        data[f'{feature_name}_{window_size}'] = df['log_SMA_diff']
+        
         return data
+    
+
     
     def exponential_moving_average(self, feature_name, data, window_size: int) -> DataFrame:
         """Calculate the Exponential Moving Average (EMA)."""
         data[f'{feature_name}_{window_size}'] = talib.EMA(data['close'], timeperiod=window_size)
+        
+        return data
+    
+    def exponential_moving_average_stationary(self, feature_name, data, window_size: int) -> DataFrame:
+        """Calculate the Exponential Moving Average (EMA)."""
+        df = data.copy()
+        df['EMA'] = talib.EMA(df['close'], timeperiod=window_size)
+        df['log_EMA_diff'] = np.log(df['close'] / df['EMA'])
+        data[f'{feature_name}_{window_size}'] = df['log_EMA_diff']
         
         return data
     
@@ -173,6 +187,19 @@ class TechnicalIndicators:
         
         return data
     
+    def bollinger_bands_stationary(self, feature_name, data, window_size: int, num_std_dev: float) -> DataFrame:
+        df = data.copy()
+        """Calculate the Bollinger Bands."""
+        upperband, middleband, lowerband = talib.BBANDS(df['close'], timeperiod=window_size, nbdevup=num_std_dev, nbdevdn=num_std_dev)
+        bandwidth = pd.Series(upperband - lowerband)
+        # df[f'{feature_name}_Upper_{window_size}'] = upperband
+        # df[f'{feature_name}_Middle_{window_size}'] = middleband
+        # df[f'{feature_name}_Lower_{window_size}'] = lowerband
+
+        data[feature_name] = (df['close'] - lowerband) / bandwidth.replace(0, 1e-9)
+        
+        return data
+    
     def normalized_average_true_range(self, feature_name, data, window_size: int) -> DataFrame:
         """Calculate the Normalized Average True Range (NATR)."""
         data[f'{feature_name}_{window_size}'] = talib.NATR(data['high'], data['low'], data['close'], timeperiod=window_size)
@@ -182,6 +209,16 @@ class TechnicalIndicators:
     def on_balance_volume(self, feature_name, data) -> DataFrame:
         """Calculate the On-Balance Volume (OBV)."""
         data[f'{feature_name}'] = talib.OBV(data['close'], data['volume'])
+        
+        return data
+    
+    def on_balance_volume_stationary(self, feature_name, data) -> DataFrame:
+        """Calculate the On-Balance Volume (OBV)."""
+        window = 20
+        obv = pd.Series(talib.OBV(data['close'], data['volume']))
+        
+        mean_vol = data['volume'].rolling(window=window).mean()
+        data[feature_name] = obv.diff(periods=window) / mean_vol
         
         return data
     
@@ -235,6 +272,23 @@ class TechnicalIndicators:
         # df.index.date as key to look up in the daily_close_prev series
         data[feature_name] = data.index.date
         data[feature_name] = data[feature_name].map(daily_close_prev)
+
+        return data
+    
+    def daily_closing_price_stationary(self, feature_name, data) -> DataFrame:
+        """Extract the daily closing price."""
+        df = data.copy()
+
+        #daily close
+        daily_close = df.groupby(df.index.date)['close'].last()
+
+        #previous day close
+        daily_close_prev = daily_close.shift(1).rename(feature_name)
+
+        # df.index.date as key to look up in the daily_close_prev series
+        data[feature_name] = data.index.date
+        data[feature_name] = data[feature_name].map(daily_close_prev)
+        data[feature_name] = np.log(data['close'] / data[feature_name])
 
         return data
     

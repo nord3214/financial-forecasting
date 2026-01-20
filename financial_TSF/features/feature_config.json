@@ -19,7 +19,7 @@
       "complexity": 20
     },
     "RSI": {
-      "enabled": false,
+      "enabled": true,
       "params": [
         14,
         21
@@ -27,7 +27,7 @@
       "complexity": 30
     },
     "ROC": {
-      "enabled": false,
+      "enabled": true,
       "params": [
         10,
         20
@@ -35,7 +35,7 @@
       "complexity": 30
     },
     "ADX": {
-      "enabled": false,
+      "enabled": true,
       "params": [
         14,
         28
@@ -43,12 +43,12 @@
       "complexity": 30
     },
     "VI": {
-      "enabled": false,
+      "enabled": true,
       "params": 14,
       "complexity": 30
     },
     "DMI": {
-      "enabled": false,
+      "enabled": true,
       "params": [
         14,
         28
@@ -56,19 +56,19 @@
       "complexity": 30
     },
     "CCI": {
-      "enabled": false,
+      "enabled": true,
       "params": [
         14
       ],
       "complexity": 30
     },
     "Kurtosis": {
-      "enabled": false,
+      "enabled": true,
       "params": 50,
       "complexity": 20
     },
     "MI": {
-      "enabled": false,
+      "enabled": true,
       "params": [
         {
           "ema_period": 9,
@@ -78,7 +78,7 @@
       "complexity": 30
     },
     "STOCH": {
-      "enabled": false,
+      "enabled": true,
       "params": [
         {
           "window_size": 14,
@@ -88,8 +88,8 @@
       ],
       "complexity": 30
     },
-    "BBANDS": {
-      "enabled": false,
+    "%BBANDS": {
+      "enabled": true,
       "params": [
         {
           "window_size": 20,
@@ -103,7 +103,7 @@
       "complexity": 30
     },
     "PVO": {
-      "enabled": false,
+      "enabled": true,
       "params": {
         "fast_period": 12,
         "long_period": 26,
@@ -112,7 +112,7 @@
       "complexity": 30
     },
     "MACD": {
-      "enabled": false,
+      "enabled": true,
       "params": {
         "fast_period": 12,
         "slow_period": 26,
@@ -121,21 +121,21 @@
       "complexity": 30
     },
     "NATR": {
-      "enabled": false,
+      "enabled": true,
       "params": [
         14
       ],
       "complexity": 30
     },
     "MFI": {
-      "enabled": false,
+      "enabled": true,
       "params": [
         14
       ],
       "complexity": 30
     },
     "OBV": {
-      "enabled": false,
+      "enabled": true,
       "complexity": 20
     },
     "LOGRET": {
@@ -149,11 +149,11 @@
       "complexity": 10
     },
     "DAY_OF_WEEK": {
-      "enabled": false,
+      "enabled": true,
       "complexity": 20
     },
     "MINUTE_OF_DAY": {
-      "enabled": false,
+      "enabled": true,
       "complexity": 20
     },
     "DAILY_CLOSE": {

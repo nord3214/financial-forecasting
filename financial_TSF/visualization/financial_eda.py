@@ -1,4 +1,3 @@
-import pandas as pd
 import matplotlib.pyplot as plt
 import os
 import seaborn as sns
@@ -41,7 +40,7 @@ class FinancialEDA:
             'savefig.bbox': 'tight'   
         })
 
-    def plot_time_series(self, column, title, unit="EUR"):
+    def plot_time_series(self, column, title, unit="USD"):
         """Creates a standardized time series plot."""
         fig, ax = plt.subplots(figsize=(10, 5))
         

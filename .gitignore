@@ -7,3 +7,4 @@ test.py
 results/
 results_*/
 plots/*
+financial_TSF/features/old_configs/*

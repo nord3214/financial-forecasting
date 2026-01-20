@@ -85,6 +85,7 @@ class FeatureStep(PipelineStep):
             
             # Do EDA here
             eda = FinancialEDA(data[0])  # Just use the first ticker for EDA
+            # ----------- EDA on OHLCV ----------------
             # eda.plot_time_series(column='close', title=f'Close Price of {step_result.ticker_names[0]}')
             
             # eda.check_adfuller('close')
@@ -93,9 +94,18 @@ class FeatureStep(PipelineStep):
             #eda.plot_distribution(column='volume', range=(0, 1.5e7))
             #eda.plot_distribution(column='LOG_VOLUME')
             
-            # for feature_col in eda.df.columns:
-            #     if feature_col not in ['ticker']:
-            #         eda.check_adfuller(feature_col)
+            # ----------- EDA on calculated features ----------------
+            
+            eda.plot_time_series(column='EMA_20', title=f'EMA 20 of {step_result.ticker_names[0]}')
+            
+            for col in eda.df.columns:
+                if col in ['SMA_20', 'EMA_20', '%BBANDS', 'OBV', 'DAILY_CLOSE' ]:
+                    eda.plot_time_series(column=col, title=f'{col} of {step_result.ticker_names[0]}')
+
+            
+            for feature_col in eda.df.columns:
+                if feature_col not in ['ticker']:
+                    eda.check_adfuller(feature_col)
                     
             # feature_cols = eda.df.columns.tolist()       
             # eda.plot_correlation(feature_cols=[col for col in eda.df.columns if col not in ['ticker']])
