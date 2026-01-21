@@ -19,15 +19,17 @@ class EvaluationStep(PipelineStep):
         # machine learning model evaluation
         step_result.metrics = self.compute_multistep_metrics(step_result.y_test, step_result.y_test_pred, step_result)
         
-        # # economic model evaluation
-        sim = TopKSimulator(step_result.split_data, transaction_cost_bps=1.0)
-        sim.prepare_data(horizon_col=f"target_{self.config.settings.forecast_horizon[0]}")
         
-        result_df = sim.run_simulation(k=5)
-        metrics = sim.get_metrics()
-        print("Top-K Trading Strategy Metrics: ", metrics)
+        # ------------------------- economic evaluation -------------------------
         
-        sim.plot_equity_curve()
+        # sim = TopKSimulator(step_result.split_data, transaction_cost_bps=1.0)
+        # sim.prepare_data(horizon_col=f"target_{self.config.settings.forecast_horizon[0]}")
+        
+        # result_df = sim.run_simulation(k=5)
+        # metrics = sim.get_metrics()
+        # print("Top-K Trading Strategy Metrics: ", metrics)
+        
+        # sim.plot_equity_curve()
         
         return step_result
     

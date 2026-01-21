@@ -12,7 +12,7 @@ from financial_TSF.models.base_model import BaseModel
 HYPERPARAMS: dict[str, Any] = {
     "n_estimators": 300,
     "random_state": 17,
-    "n_jobs": -1,
+    "n_jobs": -2,
     "max_features": "sqrt",
     "min_samples_leaf": 40,
     "max_depth": 15,

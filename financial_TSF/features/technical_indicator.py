@@ -97,7 +97,6 @@ class TechnicalIndicators:
             self.data = self.remove_basic_columns_from_dataset(self.data)
             
         # print("Final data after technical indicators:\n", self.data.info())
-            
         return self.data
     
     def remove_basic_columns_from_dataset(self, data: DataFrame) -> DataFrame:
@@ -358,7 +357,7 @@ class TechnicalIndicators:
         df = self.log_return("log_return", df, 1)
         data[f'{feature_name}_{window_size}'] = df['log_return_1'].rolling(window=window_size).kurt()
         
-        print(data[[f'{feature_name}_{window_size}']].describe())
+        # print(data[[f'{feature_name}_{window_size}']].describe())
         return data
     
     def volume_oscillator(self, feature_name, data, fast_period: int, long_period: int, signal_period: int) -> DataFrame:

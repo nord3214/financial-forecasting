@@ -96,39 +96,25 @@ class FeatureStep(PipelineStep):
             
             # ----------- EDA on calculated features ----------------
             
-            eda.plot_time_series(column='EMA_20', title=f'EMA 20 of {step_result.ticker_names[0]}')
+            # eda.plot_time_series(column='EMA_20', title=f'EMA 20 of {step_result.ticker_names[0]}')
             
-            for col in eda.df.columns:
-                if col in ['SMA_20', 'EMA_20', '%BBANDS', 'OBV', 'DAILY_CLOSE' ]:
-                    eda.plot_time_series(column=col, title=f'{col} of {step_result.ticker_names[0]}')
+            # for col in eda.df.columns:
+            #     if col in ['SMA_20', 'EMA_20', '%BBANDS', 'OBV', 'DAILY_CLOSE' ]:
+            #         eda.plot_time_series(column=col, title=f'{col} of {step_result.ticker_names[0]}')
 
             
-            for feature_col in eda.df.columns:
-                if feature_col not in ['ticker']:
-                    eda.check_adfuller(feature_col)
+            # for feature_col in eda.df.columns:
+            #     if feature_col not in ['ticker']:
+            #         p_value = eda.check_adfuller(feature_col)
+            #         if p_value >= 0.05:
+            #             print(f"Feature {feature_col} is non-stationary (p-value: {p_value})!!!!")
                     
             # feature_cols = eda.df.columns.tolist()       
             # eda.plot_correlation(feature_cols=[col for col in eda.df.columns if col not in ['ticker']])
-            
-            
-            
-            
-            
 
             step_result.data = data
             
-            # for df in data:
-            #     print("Index is", df.index)
-            
-            
             return step_result
-            
-    
-    #
-    
-    
-    
-    
     
     def __save_processed_data(self, ticker: str, data: DataFrame) -> None:
         # data = data.round(10)

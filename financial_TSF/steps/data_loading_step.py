@@ -18,7 +18,7 @@ class DataLoadingStep(PipelineStep):
     def execute(self, step_result: StepResult) -> StepResult:
         # Implement data loading logic here
         
-        print("Executing Data Loading Step with csv_path:", self.csv_path, "and number_of_tickers:", self.number_of_tickers)
+        print("Executing Data Loading Step with csv_path:", self.csv_path, "and number_of_tickers:", self.number_of_tickers if self.number_of_tickers else "All")
             
         csv_file_paths: list[Path] = list(Path(self.csv_path).rglob('*.csv'))
         
@@ -47,9 +47,10 @@ class DataLoadingStep(PipelineStep):
                     
                     # Add tickername from file name AAPL_intraday....csv to df
                     file_name = Path(csv_path).stem
-                    df["ticker"] = file_name.split('_')[0]
+                    ticker = file_name.split('_')[0]
+                    df["ticker"] = ticker
                     
-                    if not self.__validate_data(df):
+                    if not self.__validate_data(df, ticker):
                         raise Exception("Data validation failed for file: " + str(csv_path))
                     
                     df_tickers.append(df)
@@ -68,32 +69,32 @@ class DataLoadingStep(PipelineStep):
             
             return step_result
     
-    def __validate_data(self, df: DataFrame) -> bool:
+    def __validate_data(self, df: DataFrame, ticker: str) -> bool:
         
         df = df.copy()
         # Implement data validation logic here
         required_columns = {"open", "high", "low", "close", "volume", "ticker"}
         
         if df.empty:
-            print("Data validation failed. DataFrame is empty.")
+            print(f"! Data validation failed for ticker {ticker}. DataFrame is empty.")
             return False
         if not required_columns.issubset(df.columns):
-            print("Data validation failed. Missing columns:", required_columns - set(df.columns))
+            print(f"! Data validation failed for ticker {ticker}. Missing columns:", required_columns - set(df.columns))
             return False
         
         if df.isnull().any().any():
-            print("Data validation failed. Data contains null values.")
+            print(f"! Data validation failed for ticker {ticker}. Data contains null values.")
             return False
         
         df["high_is_max"] = df["high"] == df[["open", "high", "low", "close"]].max(axis=1)
         if not df["high_is_max"].all():
-            print("Data validation failed. 'high' column does not contain the maximum values.")
+            print(f"! Data validation failed for ticker {ticker}. 'high' column does not contain the maximum values.")
             return False
         df = df.drop(columns=["high_is_max"])
         
         df["low_is_min"] = df["low"] == df[["open", "high", "low", "close"]].min(axis=1)
         if not df["low_is_min"].all():
-            print("Data validation failed. 'low' column does not contain the minimum values.")
+            print(f"! Data validation failed for ticker {ticker}. 'low' column does not contain the minimum values.")
             return False
         df = df.drop(columns=["low_is_min"])
 
