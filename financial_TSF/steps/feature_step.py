@@ -51,6 +51,8 @@ class FeatureStep(PipelineStep):
                 log_return_horizon1 = pd.DataFrame(index=df.index)
                 log_return_horizon1['actual_log_return'] = np.log(df['close'] / df['close'].shift(1))
                 log_return_horizon1['return_next_interval'] = log_return_horizon1['actual_log_return'].shift(-1)
+                log_return_horizon1['ticker'] = current_ticker
+                log_return_horizon1 = log_return_horizon1.set_index('ticker', append=True)
                 
                 step_result.split_data.append({
                     "ticker_name": current_ticker,

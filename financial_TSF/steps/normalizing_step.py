@@ -24,8 +24,10 @@ class ScalingStep(PipelineStep):
         if self.use_winsorizing:
             
             for split in step_result.split_data:
-                df_train = split['X_train'].drop(columns=['ticker'])
-                df_test = split['X_test'].drop(columns=['ticker'])
+                df_train = split['X_train']
+                df_test = split['X_test']
+                df_train = df_train.set_index('ticker', append=True)
+                df_test = df_test.set_index('ticker', append=True)
                 lower = df_train.quantile(0.01)
                 upper = df_train.quantile(0.99)
                 df_train = df_train.clip(lower=lower, upper=upper, axis=1)
@@ -59,8 +61,20 @@ class ScalingStep(PipelineStep):
             # Convert back to DataFrames with original Index and Column names
             step_result.split_data[idx]['X_train'] = pd.DataFrame(xt_raw, columns=x_cols, index=split_data['X_train'].index)
             step_result.split_data[idx]['X_test'] = pd.DataFrame(xv_raw, columns=x_cols, index=split_data['X_test'].index)
-            step_result.split_data[idx]['y_train'] = pd.DataFrame(yt_raw, columns=y_cols, index=split_data['y_train'].index)
-            step_result.split_data[idx]['y_test'] = pd.DataFrame(yv_raw, columns=y_cols, index=split_data['y_test'].index)
+            step_result.split_data[idx]['y_train'] = pd.DataFrame(yt_raw, columns=y_cols, index=split_data['X_train'].index)
+            step_result.split_data[idx]['y_test'] = pd.DataFrame(yv_raw, columns=y_cols, index=split_data['X_test'].index)
+            
+            # y_test_multiindex = step_result.split_data[idx]['y_test'].copy()
+            # y_test_multiindex['ticker'] = step_result.split_data[idx]['ticker_name']
+            # y_test_multiindex = y_test_multiindex.set_index('ticker', append=True)
+            # import numpy as np
+
+            # # Vergleicht nur die nackten Zahlenwerte beider DataFrames
+            # try:
+            #     np.testing.assert_allclose(y_test_multiindex.values, step_result.split_data[idx]['y_test'].values, rtol=1e-5)
+            #     print("Check bestanden: Die numerischen Werte sind identisch.")
+            # except AssertionError as e:
+            #     print(f"Abweichung gefunden: {e}")
             
             step_result.split_data[idx]['x_scaler'] = x_scaler
             step_result.split_data[idx]['y_scaler'] = y_scaler
@@ -74,9 +88,9 @@ class ScalingStep(PipelineStep):
         # visualizer = FeatureVisualization(x_train_scaled, folder='30_scaled_features_standard_scaler_clipped_1percentiles')
         # visualizer.run()
         
-        y_train_scaled = [split['y_train'] for split in step_result.split_data]
-        visualizer = FeatureVisualization(y_train_scaled, folder='30_scaled_features_standard_scaler_clipped_1percentiles')
-        visualizer.run()
+        # y_train_scaled = [split['y_train'] for split in step_result.split_data]
+        # visualizer = FeatureVisualization(y_train_scaled, folder='30_scaled_features_standard_scaler_clipped_1percentiles')
+        # visualizer.run()
             
             
         # :TODO put all together for training step again :)

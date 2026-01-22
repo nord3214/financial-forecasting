@@ -271,8 +271,9 @@ class TopKSimulator:
             # use actual log return over next interval for economic
             series_actual = df_actual[actual_return_col].rename(ticker_name)
             
-            pred_frames.append(series_pred)
-            actual_frames.append(series_actual)
+            # remove ticker multiindex level for concatenation so can be concatenated on index timestamp
+            pred_frames.append(series_pred.droplevel('ticker'))
+            actual_frames.append(series_actual.droplevel('ticker'))
             
         # concatenate all ticker series into a single DataFrame on axis 1 one row per timestamp with all tickers
         self.signal_matrix: pd.DataFrame = pd.concat(pred_frames, axis=1)
