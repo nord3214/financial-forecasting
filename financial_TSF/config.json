@@ -1,21 +1,19 @@
 {
     "data": {
         "concatenated_csv": "data/concatenated/",
-        "number_of_tickers": 20,
+        "number_of_tickers": 10,
         "start_date": "2015-01-01",
         "end_date": "2023-12-31",
         "use_cached_processed_data": false,
         "processed_csv": "data/processed/"
     },
     "model": {
-        "modelType": "LinearRegression"
+        "modelType": "RF"
     },
     "features": {
         "featureConfigPath": "financial_TSF/features/feature_config.json",
         "complexity_levels": [
-            10,
-            20,
-            30
+            10
         ]
     },
     "pipeline": {
@@ -36,8 +34,7 @@
         "forecast_horizon": [
             12,
             24,
-            48,
-            500
+            48
         ]
     }
 }
