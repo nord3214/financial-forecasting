@@ -7,9 +7,11 @@ class FeatureVisualization:
     dfs: list[pd.DataFrame]
     columns: list[str]
     
-    def __init__(self, dfs: list[pd.DataFrame]):
+    def __init__(self, dfs: list[pd.DataFrame], folder: str = ''):
         self.dfs = dfs
         self.columns = dfs[0].columns.tolist()
+        self.file_path = Path(f'plots/{folder}')
+        self.file_path.mkdir(parents=True, exist_ok=True)
         
     
     def visualize_feature_distributions(self):
@@ -27,8 +29,7 @@ class FeatureVisualization:
             
     def visualize_feature_boxplots(self):
         """Visualize boxplots for each feature across all DataFrames using seaborn."""
-        file_path = Path('plots/')
-        file_path.mkdir(parents=True, exist_ok=True)
+
 
         for col in self.columns:            
             plot_data = []
@@ -53,9 +54,10 @@ class FeatureVisualization:
                 plt.rotation = 45 # Rotation on x-axis labels if needed, usually done via plt.xticks()
                 plt.xticks(rotation=45)
                 
-                plt.savefig(file_path / f'{col}_boxplot.png')
+                plt.savefig(self.file_path / f'{col}_boxplot.png')
+                plt.close()
 
-                plt.show()
+                # plt.show()
 
     def run(self):
         

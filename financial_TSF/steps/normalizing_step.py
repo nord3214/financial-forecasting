@@ -1,13 +1,16 @@
 from pandas import DataFrame
-from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from sklearn.preprocessing import MinMaxScaler, RobustScaler, StandardScaler
 from financial_TSF.data_models.step_datamodel import StepResult
 from financial_TSF.steps.base_step import PipelineStep
 import pandas as pd
+
+from financial_TSF.visualization.feature_visualization import FeatureVisualization
 
 class ScalingStep(PipelineStep):
     def __init__(self, config) -> None:
         self.config = config
         self.scalers = []
+        self.use_winsorizing = True
 
 
     def execute(self, step_result: StepResult) -> StepResult:
@@ -16,8 +19,22 @@ class ScalingStep(PipelineStep):
         !!! Also removes ticker column for now !!!
         """
         print("Received data for Normalizing Step with", len(step_result.split_data), "dataframes.")
+        # :TODO add multiindex with ticker!!=!=
         
-        # visualizer = FeatureVisualization(data)
+        if self.use_winsorizing:
+            
+            for split in step_result.split_data:
+                df_train = split['X_train'].drop(columns=['ticker'])
+                df_test = split['X_test'].drop(columns=['ticker'])
+                lower = df_train.quantile(0.01)
+                upper = df_train.quantile(0.99)
+                df_train = df_train.clip(lower=lower, upper=upper, axis=1)
+                df_test = df_test.clip(lower=lower, upper=upper, axis=1)
+                split['X_test'] = df_test
+                split['X_train'] = df_train
+                
+        
+        # visualizer = FeatureVisualization(x_train, folder='30_unscaled_features_clipped_1percentiles')
         # visualizer.run()
         
         for idx, split_data in enumerate(step_result.split_data):
@@ -26,15 +43,15 @@ class ScalingStep(PipelineStep):
             x_scaler = self.get_scaler()
             y_scaler = self.get_scaler()
             
-            x_scaler.fit(split_data['X_train'].drop(columns=['ticker']))
+            x_scaler.fit(split_data['X_train'])
             y_scaler.fit(split_data['y_train'])
             
             # Extract column names before transforming
-            x_cols = split_data['X_train'].drop(columns=['ticker']).columns
+            x_cols = split_data['X_train'].columns
             y_cols = split_data['y_train'].columns
 
-            xt_raw = x_scaler.transform(split_data['X_train'].drop(columns=['ticker']))
-            xv_raw = x_scaler.transform(split_data['X_test'].drop(columns=['ticker']))
+            xt_raw = x_scaler.transform(split_data['X_train'])
+            xv_raw = x_scaler.transform(split_data['X_test'])
             yt_raw = y_scaler.transform(split_data['y_train'])
             yv_raw = y_scaler.transform(split_data['y_test'])
             
@@ -53,6 +70,14 @@ class ScalingStep(PipelineStep):
             # print(f"Scaled X_test: ", step_result.split_data[idx]['X_test'].describe().round(5))
             # print(f"Scaled y_test: ", step_result.split_data[idx]['y_test'].describe().round(5)) 
             
+        # x_train_scaled = [split['X_train'] for split in step_result.split_data]
+        # visualizer = FeatureVisualization(x_train_scaled, folder='30_scaled_features_standard_scaler_clipped_1percentiles')
+        # visualizer.run()
+        
+        y_train_scaled = [split['y_train'] for split in step_result.split_data]
+        visualizer = FeatureVisualization(y_train_scaled, folder='30_scaled_features_standard_scaler_clipped_1percentiles')
+        visualizer.run()
+            
             
         # :TODO put all together for training step again :)
         # for backwards compatibility done here
@@ -60,6 +85,14 @@ class ScalingStep(PipelineStep):
         step_result.X_test = pd.concat([step_result.split_data[i]['X_test'] for i in range(len(step_result.split_data))], axis=0)
         step_result.y_train = pd.concat([step_result.split_data[i]['y_train'] for i in range(len(step_result.split_data))], axis=0)
         step_result.y_test = pd.concat([step_result.split_data[i]['y_test'] for i in range(len(step_result.split_data))], axis=0)
+        
+        # ---------- sort for time order -----------
+        # step_result.X_train = step_result.X_train.sort_index(kind='stable')
+        # step_result.X_test = step_result.X_test.sort_index(kind='stable')
+        # step_result.y_train = step_result.y_train.sort_index(kind='stable')
+        # step_result.y_test = step_result.y_test.sort_index(kind='stable')
+        
+        # check if order is correct
         
         # print(step_result.X_train.shape, step_result.y_train.shape, step_result.X_test.shape, step_result.y_test.shape)
         # print("Described X_train: ", step_result.X_train.describe().round(5))
@@ -70,6 +103,7 @@ class ScalingStep(PipelineStep):
     def get_scaler(self):
         # scaler = MinMaxScaler()
         scaler = StandardScaler()
+        # scaler = RobustScaler()
         return scaler
     
     def perform_standard_scaling(self, df: DataFrame) -> DataFrame:
