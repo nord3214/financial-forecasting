@@ -36,8 +36,7 @@ class ScalingStep(PipelineStep):
                 split['X_train'] = df_train
                 
         
-        # visualizer = FeatureVisualization(x_train, folder='30_unscaled_features_clipped_1percentiles')
-        # visualizer.run()
+        
         
         for idx, split_data in enumerate(step_result.split_data):
             
@@ -93,24 +92,19 @@ class ScalingStep(PipelineStep):
         # visualizer.run()
             
             
-        # :TODO put all together for training step again :)
+        # put all together for training step again :)
         # for backwards compatibility done here
         step_result.X_train = pd.concat([step_result.split_data[i]['X_train'] for i in range(len(step_result.split_data))], axis=0)
         step_result.X_test = pd.concat([step_result.split_data[i]['X_test'] for i in range(len(step_result.split_data))], axis=0)
         step_result.y_train = pd.concat([step_result.split_data[i]['y_train'] for i in range(len(step_result.split_data))], axis=0)
         step_result.y_test = pd.concat([step_result.split_data[i]['y_test'] for i in range(len(step_result.split_data))], axis=0)
         
-        # ---------- sort for time order -----------
-        # step_result.X_train = step_result.X_train.sort_index(kind='stable')
-        # step_result.X_test = step_result.X_test.sort_index(kind='stable')
-        # step_result.y_train = step_result.y_train.sort_index(kind='stable')
-        # step_result.y_test = step_result.y_test.sort_index(kind='stable')
-        
-        # check if order is correct
-        
-        # print(step_result.X_train.shape, step_result.y_train.shape, step_result.X_test.shape, step_result.y_test.shape)
-        # print("Described X_train: ", step_result.X_train.describe().round(5))
-            
+        #  ---------- sort for time order -----------
+        # sort multiindex by level 0 (timestamp)
+        # step_result.X_train.sort_index(level=0, inplace=True)
+        # step_result.X_test.sort_index(level=0, inplace=True)
+        # step_result.y_train.sort_index(level=0, inplace=True)   
+        # step_result.y_test.sort_index(level=0, inplace=True)
         
         return step_result
     

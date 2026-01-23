@@ -53,7 +53,7 @@ class RandomForestRegressor(BaseModel):
             n_jobs= -2,
             random_state=1337
         )
-        tune_hyperparameters = True
+        tune_hyperparameters = False
         
         if tune_hyperparameters:
             print("start  Hyperparameter-Tuning (RandomizedSearch)...")

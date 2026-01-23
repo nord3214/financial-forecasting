@@ -23,10 +23,7 @@ class SplittingStep(PipelineStep):
         
         for i, ticker_df in enumerate(step_result.data):
             step_result.data[i], target_column_names = self.calculate_target_columns(ticker_df)
-            
-            # remove non-stationary features here 
-            step_result.data[i] = step_result.data[i].drop(['open', 'high', 'low', 'close'], axis=1)
-            
+                        
             # remove rows with NaN values created by shifting for target columns/ or feature calculation
             step_result.data[i] = step_result.data[i].dropna()
             
