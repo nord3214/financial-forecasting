@@ -4,7 +4,6 @@ from pandas import DataFrame
 import numpy.typing as npt
 
 class SplitData(TypedDict):
-    # :TODO think about better typing here
     ticker_name: str 
     X_train: Any
     X_test: Any

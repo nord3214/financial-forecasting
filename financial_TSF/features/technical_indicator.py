@@ -86,8 +86,6 @@ class TechnicalIndicators:
                 
     def calculate_indicators(self, complexity_levels: list[int]) -> DataFrame:
 
-        # :TODO create model class for config
-        # :TODO do scaling / normalization somewhere
         for name, params in self.config['technical_indicators'].items():
             # print(f"Calculating {name} with params: {params}...")
             if params['enabled'] == True:
@@ -96,12 +94,10 @@ class TechnicalIndicators:
         if 10 not in complexity_levels:
             self.data = self.remove_basic_columns_from_dataset(self.data)
             
-        # print("Final data after technical indicators:\n", self.data.info())
         return self.data
     
     def remove_basic_columns_from_dataset(self, data: DataFrame) -> DataFrame:
         """Remove basic columns from the dataset, keeping only technical indicators."""
-        # :TODO somewhere remove index timestamp
         basic_columns = ['open', 'high', 'low', 'close', 'volume', 'ticker']
         
         return data.drop(columns=basic_columns)            
@@ -249,9 +245,7 @@ class TechnicalIndicators:
         data[f'{feature_name}_{window_size}'] = (data['high'] - data['low']).rolling(window=window_size).mean()
         
         return data
-    
-    # :TODO add hl range kind of ratio over n periods
-    
+        
     def oc_range(self, feature_name, data, window_size: int) -> DataFrame:
         """Calculate the Open-Close Range over a rolling window."""
         data[f'{feature_name}_{window_size}'] = (data['open'] - data['close']).rolling(window=window_size).mean()

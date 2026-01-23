@@ -4,11 +4,15 @@ from financial_TSF.data_models.config_data_model import AppConfig
 from financial_TSF.data_models.step_datamodel import StepResult
 from financial_TSF.steps.base_step import PipelineStep
 
+HIGHLY_CORRELATED_FEATURES: list[str] = ['open', 'high', 'low', 'close']
+
 
 class SplittingStep(PipelineStep):
     def __init__(self, config: AppConfig):
         self.forecast_horizons = config.settings.forecast_horizon
         self.train_size = 0.8
+        self.highly_correlated_features = HIGHLY_CORRELATED_FEATURES
+
         
     def execute(self, step_result: StepResult) -> StepResult:
 
@@ -23,6 +27,9 @@ class SplittingStep(PipelineStep):
         
         for i, ticker_df in enumerate(step_result.data):
             step_result.data[i], target_column_names = self.calculate_target_columns(ticker_df)
+            
+            # remove highly correlated features if any (correlation > 0.95)
+            step_result.data[i] = step_result.data[i].drop(columns=self.highly_correlated_features)
                         
             # remove rows with NaN values created by shifting for target columns/ or feature calculation
             step_result.data[i] = step_result.data[i].dropna()
@@ -69,7 +76,6 @@ class SplittingStep(PipelineStep):
     def calculate_target_columns(self, df: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
         # save all target column names to return
         target_column_names = []
-            # :TODO handle target creation earlier in the pipeline maybe in feature step
         for horizon in self.forecast_horizons:
             column_name = f"target_{horizon}"
             

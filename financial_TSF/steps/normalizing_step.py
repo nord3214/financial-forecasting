@@ -19,7 +19,6 @@ class ScalingStep(PipelineStep):
         !!! Also removes ticker column for now !!!
         """
         print("Received data for Normalizing Step with", len(step_result.split_data), "dataframes.")
-        # :TODO add multiindex with ticker!!=!=
         
         if self.use_winsorizing:
             
@@ -63,25 +62,8 @@ class ScalingStep(PipelineStep):
             step_result.split_data[idx]['y_train'] = pd.DataFrame(yt_raw, columns=y_cols, index=split_data['X_train'].index)
             step_result.split_data[idx]['y_test'] = pd.DataFrame(yv_raw, columns=y_cols, index=split_data['X_test'].index)
             
-            # y_test_multiindex = step_result.split_data[idx]['y_test'].copy()
-            # y_test_multiindex['ticker'] = step_result.split_data[idx]['ticker_name']
-            # y_test_multiindex = y_test_multiindex.set_index('ticker', append=True)
-            # import numpy as np
-
-            # # Vergleicht nur die nackten Zahlenwerte beider DataFrames
-            # try:
-            #     np.testing.assert_allclose(y_test_multiindex.values, step_result.split_data[idx]['y_test'].values, rtol=1e-5)
-            #     print("Check bestanden: Die numerischen Werte sind identisch.")
-            # except AssertionError as e:
-            #     print(f"Abweichung gefunden: {e}")
-            
             step_result.split_data[idx]['x_scaler'] = x_scaler
             step_result.split_data[idx]['y_scaler'] = y_scaler
-            
-            # print(f"Scaled X_train: ", step_result.split_data[idx]['X_train'].describe().round(5))
-            # print(f"Scaled y_train: ", step_result.split_data[idx]['y_train'].describe().round(5))
-            # print(f"Scaled X_test: ", step_result.split_data[idx]['X_test'].describe().round(5))
-            # print(f"Scaled y_test: ", step_result.split_data[idx]['y_test'].describe().round(5)) 
             
         # x_train_scaled = [split['X_train'] for split in step_result.split_data]
         # visualizer = FeatureVisualization(x_train_scaled, folder='30_scaled_features_standard_scaler_clipped_1percentiles')
@@ -93,7 +75,6 @@ class ScalingStep(PipelineStep):
             
             
         # put all together for training step again :)
-        # for backwards compatibility done here
         step_result.X_train = pd.concat([step_result.split_data[i]['X_train'] for i in range(len(step_result.split_data))], axis=0)
         step_result.X_test = pd.concat([step_result.split_data[i]['X_test'] for i in range(len(step_result.split_data))], axis=0)
         step_result.y_train = pd.concat([step_result.split_data[i]['y_train'] for i in range(len(step_result.split_data))], axis=0)
@@ -101,6 +82,7 @@ class ScalingStep(PipelineStep):
         
         #  ---------- sort for time order -----------
         # sort multiindex by level 0 (timestamp)
+        
         # step_result.X_train.sort_index(level=0, inplace=True)
         # step_result.X_test.sort_index(level=0, inplace=True)
         # step_result.y_train.sort_index(level=0, inplace=True)   

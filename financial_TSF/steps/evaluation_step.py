@@ -141,12 +141,6 @@ class EvaluationStep(PipelineStep):
             trading_simulator = TradingSimulation(self.config, horizon)  
             backtest_results = trading_simulator.evaluate_horizon(y_true_horizon, y_pred_horizon, threshold=0.001)
             
-            
-            # plt.plot(backtest_results.index, backtest_results['cumulative_pnl'], label=f'Cumulative PnL Horizon {horizon}'
-            #          )
-            # plt.show()
-            
-            
             if not (backtest_results['y_true'].to_numpy() == y_true_horizon.to_numpy()).all():
                 raise ValueError("Mismatch between backtest y_true and input y_true_horizon cant reset index properly")
             y_pred_traded = backtest_results['position'].abs() * y_pred_horizon.reset_index(drop=True)

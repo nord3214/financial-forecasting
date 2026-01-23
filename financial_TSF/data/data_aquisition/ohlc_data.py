@@ -54,7 +54,6 @@ def concat_data_from_ticker():
             final_df.to_csv(f"{save_dir}{symbol}_intraday_{parameters['interval']}_full.csv", index=False)
             
 def validate_data():
-    # :TODO put validate data in concat data function
     """Removes files that are likely incomplete based on file size. Because tickers was not on stock exchange since then"""
 
     absolute_path = Path(f"G:\\TSFdata")    

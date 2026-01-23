@@ -11,9 +11,6 @@ from financial_TSF.steps.base_step import PipelineStep
 from financial_TSF.visualization.financial_eda import FinancialEDA
 
 
-HIGHLY_CORRELATED_FEATURES: list[str] = ['open', 'high', 'low', 'close']
-
-
 class FeatureStep(PipelineStep):
     
     def __init__(self, config: AppConfig) -> None:
@@ -22,10 +19,7 @@ class FeatureStep(PipelineStep):
         
         with open(self.config.features.feature_config_path, "r") as f:
             self.feature_config: Dict[str, Any] = json.load(f)
-            
-        self.highly_correlated_features = HIGHLY_CORRELATED_FEATURES
-        
-            
+                             
     
     
     def execute(self, step_result: StepResult) -> StepResult:
@@ -80,15 +74,7 @@ class FeatureStep(PipelineStep):
                 
 
                 data[i] = data[i].round(10)
-                
-                # remove highly correlated features
-                data[i] = data[i].drop(columns=self.highly_correlated_features)
-                
-                # print(f"Processed DataFrame {i+1}, new shape: {data[i].shape}")
-
-                # with pd.option_context('display.max_columns', None):
-                #     print(data[i].describe())
-                
+                                
                 self.__save_processed_data(current_ticker, data[i])
                 
             columns = data[0].columns.tolist()
@@ -100,28 +86,22 @@ class FeatureStep(PipelineStep):
             return step_result
     
     def __save_processed_data(self, ticker: str, data: DataFrame) -> None:
-        # data = data.round(10)
-        # print("Dataframe: ", data.tail(30))
-        # print("Saving processed data for ticker:", ticker)
-        
+          
         save_path = f'{self.config.data.processed_csv}/{ticker}/{ticker}_intraday_5min_processed.parquet'
         Path(save_path).parent.mkdir(parents=True, exist_ok=True)
         data.to_parquet(save_path, index=False)
-        # data.to_csv(save_path, index=False, float_format='%.15g')
-        # print(f"Processed data saved to {save_path}")
+
         
     def __load_processed_data(self, ticker: str) -> DataFrame:
         load_path = f'{self.config.data.processed_csv}/{ticker}/{ticker}_intraday_5min_processed.parquet'
-        # print("Loading processed data for ticker:", ticker)
-        # data = pd.read_csv(load_path)
         data = pd.read_parquet(load_path)
-        # print(f"Processed data loaded from {load_path}, shape: {data.shape}")
+        
         return data
     
 
 
 def run_eda(df: DataFrame, ticker: str) -> None:
-    eda = FinancialEDA(df)  # Just use the first ticker for EDA
+    eda = FinancialEDA(df) 
     # ----------- EDA on OHLCV ----------------
     eda.plot_time_series(column='close', title=f'Close Price of {ticker}')
     
