@@ -6,8 +6,10 @@ import numpy.typing as npt
 class SplitData(TypedDict):
     ticker_name: str 
     X_train: Any
+    X_val: Any
     X_test: Any
     y_train: Any
+    y_val: Any
     y_train_pred: Any
     y_test: Any
     y_test_pred: Any
@@ -27,6 +29,8 @@ class StepResult:
     y_test_pred: Any = None
     X_train: Any = None
     y_train: Any = None
+    X_val: Any = None
+    y_val: Any = None
     y_train_pred: Any = None
     metrics: dict[str, Any] = field(default_factory=dict),
     ticker_names: list[str] = field(default_factory=list)

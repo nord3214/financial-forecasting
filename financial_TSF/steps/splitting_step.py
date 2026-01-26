@@ -10,7 +10,8 @@ HIGHLY_CORRELATED_FEATURES: list[str] = ['open', 'high', 'low', 'close']
 class SplittingStep(PipelineStep):
     def __init__(self, config: AppConfig):
         self.forecast_horizons = config.settings.forecast_horizon
-        self.train_size = 0.8
+        self.train_ratio = 0.75
+        self.val_ratio = 0.15
         self.highly_correlated_features = HIGHLY_CORRELATED_FEATURES
 
         
@@ -18,54 +19,85 @@ class SplittingStep(PipelineStep):
 
         target_column_names = []
         max_number_of_rows = 0
-        split_point_timestamp = 0
+        # initialize split points as timestamps
+        val_start_timestamp = None
+        test_start_timestamp = None
         
         step_result.X_train = []
+        step_result.X_val = []
         step_result.X_test = [] 
+        
         step_result.y_train = []
+        step_result.y_val = []
         step_result.y_test = []
         
+        # loop1 determin global split points based on largest dataframe
         for i, ticker_df in enumerate(step_result.data):
             step_result.data[i], target_column_names = self.calculate_target_columns(ticker_df)
             
-            # remove highly correlated features if any (correlation > 0.95)
+            # remove highly correlated features if any (correlation > 0.xx)
             step_result.data[i] = step_result.data[i].drop(columns=self.highly_correlated_features)
                         
             # remove rows with NaN values created by shifting for target columns/ or feature calculation
             step_result.data[i] = step_result.data[i].dropna()
             
+            # get split point based on the largest dataframe
             if step_result.data[i].shape[0] > max_number_of_rows:
                 max_number_of_rows = step_result.data[i].shape[0]
-                split_point_idx = int(max_number_of_rows * self.train_size)
-                split_point_timestamp = step_result.data[i].index[split_point_idx]
                 
+                val_start_idx = int(max_number_of_rows * self.train_ratio)
+                val_start_timestamp = step_result.data[i].index[val_start_idx]
                 
+                test_start_idx = int(max_number_of_rows * (self.train_ratio + self.val_ratio))  
+                test_start_timestamp = step_result.data[i].index[test_start_idx]
+                
+        # Safety Check: Found split timestamps
+        if val_start_timestamp is None or test_start_timestamp is None:
+            raise ValueError("No valid data found to determine split points.")
+                
+        print("Global split points determined: Val start at", val_start_timestamp, ", Test start at", test_start_timestamp)
+
+        #list for tickername to remove due to insufficient data - remove after loop
+        tickers_to_remove = []        
         
-                
+        # loop2 split each ticker df based on global split points        
         for i, ticker_df in enumerate(step_result.data):
             
-            X_train, X_test, y_train, y_test = self.split_data(ticker_df, split_point_timestamp=split_point_timestamp, target_column_names=target_column_names)
+            X_train, X_val, X_test, y_train, y_val, y_test = self.split_data(ticker_df, val_start_timestamp=val_start_timestamp, test_start_timestamp=test_start_timestamp, target_column_names=target_column_names)
 
             ticker_name = ticker_df["ticker"].iloc[0]
-            if X_train.empty:
+            if X_train.empty or X_val.empty:
                 print(f"Not enough data for ticker {ticker_name} to split. Wont use this ticker for training/testing.")
-                step_result.ticker_names.remove(ticker_name)
+                tickers_to_remove.append(ticker_name)
+                    # step_result.ticker_names.remove(ticker_name)
                 # also remove corresponding split_data entry of this ticker
-                step_result.split_data = [data for data in step_result.split_data if data["ticker_name"] != ticker_name]
+                    # step_result.split_data = [data for data in step_result.split_data if data["ticker_name"] != ticker_name]
                 continue
-            
+    
+            # append to step result all train/test data
             step_result.X_train.append(X_train)
+            step_result.X_val.append(X_val)
             step_result.X_test.append(X_test)
             step_result.y_train.append(y_train)
+            step_result.y_val.append(y_val)
             step_result.y_test.append(y_test)
             
-            
+            # Update split_data dictionary            
             for data in step_result.split_data:
                 if data["ticker_name"] == ticker_name:
                     data["X_train"] = X_train
+                    data["X_val"] = X_val
                     data["X_test"] = X_test
                     data["y_train"] = y_train
+                    data["y_val"] = y_val
                     data["y_test"] = y_test
+                    break
+                
+        # remove tickers with insufficient data from step_result        
+        if tickers_to_remove:
+            step_result.ticker_names = [t for t in step_result.ticker_names if t not in tickers_to_remove]
+            step_result.split_data = [data for data in step_result.split_data if data["ticker_name"] not in tickers_to_remove]
+            
             
         # clear step_result data to save memory and avoid confustion because no more needed
         step_result.data = []
@@ -86,20 +118,20 @@ class SplittingStep(PipelineStep):
                 
         return df, target_column_names
     
-    def split_data(self, df: pd.DataFrame, split_point_timestamp, train_size: float = 0.8, target_column_names: list[str] = []) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    def split_data(self, df: pd.DataFrame, val_start_timestamp, test_start_timestamp, target_column_names: list[str] = []) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
         Docstring for split_data
         
         :param df: df of ticker to split
         :type df: pd.DataFrame
-        :param train_size: train size ratio between 0 and 1
-        :type train_size: float
+        :param val_start_timestamp: validation start timestamp
+        :type val_start_timestamp: pd.Timestamp
+        :param test_start_timestamp: test start timestamp
+        :type test_start_timestamp: pd.Timestamp
         :param target_column_names: name of target columns in y
         :type target_column_names: list[str]
-        :param split_point_timestamp: timestamp to split the data on
-        :type split_point_timestamp: pd.Timestamp
-        :return: X_train, X_test, y_train, y_test
-        :rtype: tuple[DataFrame, DataFrame, DataFrame, DataFrame]
+        :return: X_train, X_val, X_test, y_train, y_val, y_test
+        :rtype: tuple[DataFrame, DataFrame, DataFrame, DataFrame, DataFrame, DataFrame]
         """
         
         df = df.sort_index()
@@ -108,11 +140,13 @@ class SplittingStep(PipelineStep):
         X = df.drop(columns=target_column_names)
 
         
-        train_mask = df.index < split_point_timestamp
-        test_mask = df.index >= split_point_timestamp
+        train_mask = df.index < val_start_timestamp
+        val_mask = (df.index >= val_start_timestamp) & (df.index < test_start_timestamp)
+        test_mask = df.index >= test_start_timestamp
         
         X_train, y_train = X[train_mask], y[train_mask]
+        X_val, y_val = X[val_mask], y[val_mask]
         X_test, y_test = X[test_mask], y[test_mask]
-        return X_train, X_test, y_train, y_test
+        return X_train, X_val, X_test, y_train, y_val, y_test
 
         
