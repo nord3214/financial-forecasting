@@ -22,6 +22,8 @@ class SplittingStep(PipelineStep):
         # initialize split points as timestamps
         val_start_timestamp = None
         test_start_timestamp = None
+        train_start_timestamp = None
+        test_end_timestamp = None
         
         step_result.X_train = []
         step_result.X_val = []
@@ -50,12 +52,17 @@ class SplittingStep(PipelineStep):
                 
                 test_start_idx = int(max_number_of_rows * (self.train_ratio + self.val_ratio))  
                 test_start_timestamp = step_result.data[i].index[test_start_idx]
+                train_start_timestamp = step_result.data[i].index[0]
+                test_end_timestamp = step_result.data[i].index[-1]
                 
         # Safety Check: Found split timestamps
         if val_start_timestamp is None or test_start_timestamp is None:
             raise ValueError("No valid data found to determine split points.")
                 
-        print("Global split points determined: Val start at", val_start_timestamp, ", Test start at", test_start_timestamp)
+        print("Global split points determined:")
+        print(f"Train set: {train_start_timestamp} to {val_start_timestamp}")
+        print(f"Val set: {val_start_timestamp} to {test_start_timestamp}")
+        print(f"Test set: {test_start_timestamp} to {test_end_timestamp}")
 
         #list for tickername to remove due to insufficient data - remove after loop
         tickers_to_remove = []        

@@ -17,7 +17,7 @@ class TickerDataset(Dataset):
         return self.X[idx], self.y[idx]
     
 
-def create_dataloader(X, y, batch_size):
+def create_dataloader(X, y, batch_size, shuffle=False):
     dataset = TickerDataset(X, y)
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
     return dataloader
