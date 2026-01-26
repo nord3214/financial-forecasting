@@ -9,7 +9,6 @@ from financial_TSF.visualization.feature_visualization import FeatureVisualizati
 class ScalingStep(PipelineStep):
     def __init__(self, config) -> None:
         self.config = config
-        self.scalers = []
         self.use_winsorizing = True
 
 
@@ -24,17 +23,26 @@ class ScalingStep(PipelineStep):
             
             for split in step_result.split_data:
                 df_train = split['X_train']
+                df_val = split['X_val']
                 df_test = split['X_test']
+                
+                
                 df_train = df_train.set_index('ticker', append=True)
+                def_val = df_val.set_index('ticker', append=True)
                 df_test = df_test.set_index('ticker', append=True)
+                
+                
                 lower = df_train.quantile(0.01)
                 upper = df_train.quantile(0.99)
+                
                 df_train = df_train.clip(lower=lower, upper=upper, axis=1)
+                df_val = def_val.clip(lower=lower, upper=upper, axis=1)
                 df_test = df_test.clip(lower=lower, upper=upper, axis=1)
+                
                 split['X_test'] = df_test
+                split['X_val'] = df_val
                 split['X_train'] = df_train
                 
-        
         
         
         for idx, split_data in enumerate(step_result.split_data):
@@ -50,17 +58,20 @@ class ScalingStep(PipelineStep):
             x_cols = split_data['X_train'].columns
             y_cols = split_data['y_train'].columns
 
-            xt_raw = x_scaler.transform(split_data['X_train'])
-            xv_raw = x_scaler.transform(split_data['X_test'])
-            yt_raw = y_scaler.transform(split_data['y_train'])
-            yv_raw = y_scaler.transform(split_data['y_test'])
+            x_train_raw = x_scaler.transform(split_data['X_train'])
+            x_val_raw = x_scaler.transform(split_data['X_val'])
+            x_test_raw = x_scaler.transform(split_data['X_test'])
+            y_train_raw = y_scaler.transform(split_data['y_train'])
+            y_val_raw = y_scaler.transform(split_data['y_val'])
+            y_test_raw = y_scaler.transform(split_data['y_test'])
             
-
             # Convert back to DataFrames with original Index and Column names
-            step_result.split_data[idx]['X_train'] = pd.DataFrame(xt_raw, columns=x_cols, index=split_data['X_train'].index)
-            step_result.split_data[idx]['X_test'] = pd.DataFrame(xv_raw, columns=x_cols, index=split_data['X_test'].index)
-            step_result.split_data[idx]['y_train'] = pd.DataFrame(yt_raw, columns=y_cols, index=split_data['X_train'].index)
-            step_result.split_data[idx]['y_test'] = pd.DataFrame(yv_raw, columns=y_cols, index=split_data['X_test'].index)
+            step_result.split_data[idx]['X_train'] = pd.DataFrame(x_train_raw, columns=x_cols, index=split_data['X_train'].index)
+            step_result.split_data[idx]['X_val'] = pd.DataFrame(x_val_raw, columns=x_cols, index=split_data['X_val'].index)
+            step_result.split_data[idx]['X_test'] = pd.DataFrame(x_test_raw, columns=x_cols, index=split_data['X_test'].index)
+            step_result.split_data[idx]['y_train'] = pd.DataFrame(y_train_raw, columns=y_cols, index=split_data['X_train'].index)
+            step_result.split_data[idx]['y_val'] = pd.DataFrame(y_val_raw, columns=y_cols, index=split_data['X_val'].index)
+            step_result.split_data[idx]['y_test'] = pd.DataFrame(y_test_raw, columns=y_cols, index=split_data['X_test'].index)
             
             step_result.split_data[idx]['x_scaler'] = x_scaler
             step_result.split_data[idx]['y_scaler'] = y_scaler
@@ -76,16 +87,20 @@ class ScalingStep(PipelineStep):
             
         # put all together for training step again :)
         step_result.X_train = pd.concat([step_result.split_data[i]['X_train'] for i in range(len(step_result.split_data))], axis=0)
+        step_result.X_val = pd.concat([step_result.split_data[i]['X_val'] for i in range(len(step_result.split_data))], axis=0)
         step_result.X_test = pd.concat([step_result.split_data[i]['X_test'] for i in range(len(step_result.split_data))], axis=0)
         step_result.y_train = pd.concat([step_result.split_data[i]['y_train'] for i in range(len(step_result.split_data))], axis=0)
+        step_result.y_val = pd.concat([step_result.split_data[i]['y_val'] for i in range(len(step_result.split_data))], axis=0)
         step_result.y_test = pd.concat([step_result.split_data[i]['y_test'] for i in range(len(step_result.split_data))], axis=0)
         
         #  ---------- sort for time order -----------
         # sort multiindex by level 0 (timestamp)
         
         # step_result.X_train.sort_index(level=0, inplace=True)
+        # step_result.X_val.sort_index(level=0, inplace=True)
         # step_result.X_test.sort_index(level=0, inplace=True)
         # step_result.y_train.sort_index(level=0, inplace=True)   
+        # step_result.y_val.sort_index(level=0, inplace=True)
         # step_result.y_test.sort_index(level=0, inplace=True)
         
         return step_result
