@@ -13,7 +13,8 @@ MODEL_CONFIG = {
     "hidden_layers": [64, 32], 
     "dropout": 0.2,
     "lr": 0.001,
-    "batch_size": 64
+    "batch_size": 64,
+    "patience": 20
 }
 
 class MLPModel(BaseModel):
@@ -25,7 +26,7 @@ class MLPModel(BaseModel):
         self.dropout = model_config.get("dropout", 0.2)
         self.lr = model_config.get("lr", 0.001)
         self.batch_size = model_config.get("batch_size", 64)
-        self.patience = 5 # for early stopping
+        self.patience = model_config.get("patience", 20) # for early stopping
         self.is_tune_hyperparameters = False
         
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -86,8 +87,8 @@ class MLPModel(BaseModel):
                 # print statistics
                 # accumulate loss over batches
                 current_loss += loss.item()
-                if (i+1) % 5000 == 0:
-                    print(f'Batch {i+1}, Loss: {current_loss / 5000}')
+                if (i+1) % 500 == 0:
+                    print(f'Batch {i+1}, Loss: {current_loss / 500}')
                     current_loss = 0.0
                     
             # Validation Step
@@ -115,6 +116,32 @@ class MLPModel(BaseModel):
             if no_improve_epochs >= self.patience:
                 print(f"Early Stopping at Epoch {epoch+1}")
                 break
+            
+            # check for mean predictor
+            self.model.eval()
+            all_preds = []
+            all_targets = []
+
+            with torch.no_grad():
+                for inputs, targets in val_loader:
+                    inputs = inputs.to(self.device).float()
+                    outputs = self.model(inputs)
+                    all_preds.append(outputs.cpu())
+                    all_targets.append(targets.cpu())
+
+            # concat all predictions and targets
+            all_preds = torch.cat(all_preds)
+            all_targets = torch.cat(all_targets)
+
+            # calculate std and mean
+            std_pred = all_preds.std().item()
+            std_target = all_targets.std().item()
+            mean_pred = all_preds.mean().item()
+
+            print(f"--- diagnosis for {epoch+1} ---")
+            print(f"Target Std:    {std_target:.4f}")
+            print(f"Prediction Std: {std_pred:.4f}")
+            print(f"Prediction Mean: {mean_pred:.4f}")
 
         print('Training process has finished.')
         
@@ -184,10 +211,10 @@ class DynamicMLP(nn.Module):
 def run_hyperparameter_tuning(pipeline_config: AppConfig, step_result):
     # define search space
     param_grid = {
-        "hidden_layers": [[32], [64, 32], [128, 64, 32]], 
+        "hidden_layers": [[256, 256, 128, 64], [256, 256, 128], [256, 128, 64]],
         "dropout": [0.1, 0.2, 0.5],
         "lr": [0.001, 0.0005, 0.0001],
-        "batch_size": [32, 64, 128]
+        "batch_size": [512, 1024]
     }
     
     best_loss = float('inf')
@@ -201,7 +228,7 @@ def run_hyperparameter_tuning(pipeline_config: AppConfig, step_result):
             "lr": random.choice(param_grid["lr"]),
             "batch_size": random.choice(param_grid["batch_size"]),
             "epochs": 50,
-            "patience": 5
+            "patience": 20
         }
         
         print(f"Testing Config {i}: {model_config}")
