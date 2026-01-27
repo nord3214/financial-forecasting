@@ -22,28 +22,41 @@ class ScalingStep(PipelineStep):
         if self.use_winsorizing:
             
             for split in step_result.split_data:
+                # winsorizing for feature columns
                 df_train = split['X_train']
                 df_val = split['X_val']
                 df_test = split['X_test']
-                
                 
                 df_train = df_train.set_index('ticker', append=True)
                 def_val = df_val.set_index('ticker', append=True)
                 df_test = df_test.set_index('ticker', append=True)
                 
+                lower_x = df_train.quantile(0.01)
+                upper_x = df_train.quantile(0.99)
                 
-                lower = df_train.quantile(0.01)
-                upper = df_train.quantile(0.99)
-                
-                df_train = df_train.clip(lower=lower, upper=upper, axis=1)
-                df_val = def_val.clip(lower=lower, upper=upper, axis=1)
-                df_test = df_test.clip(lower=lower, upper=upper, axis=1)
+                df_train = df_train.clip(lower=lower_x, upper=upper_x, axis=1)
+                df_val = def_val.clip(lower=lower_x, upper=upper_x, axis=1)
+                df_test = df_test.clip(lower=lower_x, upper=upper_x, axis=1)
                 
                 split['X_test'] = df_test
                 split['X_val'] = df_val
                 split['X_train'] = df_train
                 
-        
+                # winsorizing for target columns
+                df_train = split['y_train']
+                df_val = split['y_val']
+                df_test = split['y_test']
+
+                lower_y = df_train.quantile(0.005)            
+                upper_y = df_train.quantile(0.995)
+                
+                df_train = df_train.clip(lower=lower_y, upper=upper_y, axis=1)
+                df_val = df_val.clip(lower=lower_y, upper=upper_y, axis=1)
+                df_test = df_test.clip(lower=lower_y, upper=upper_y, axis=1)
+                
+                split['y_test'] = df_test
+                split['y_val'] = df_val
+                split['y_train'] = df_train
         
         for idx, split_data in enumerate(step_result.split_data):
             
@@ -81,7 +94,7 @@ class ScalingStep(PipelineStep):
         # visualizer.run()
         
         # y_train_scaled = [split['y_train'] for split in step_result.split_data]
-        # visualizer = FeatureVisualization(y_train_scaled, folder='30_scaled_features_standard_scaler_clipped_1percentiles')
+        # visualizer = FeatureVisualization(y_train_scaled, folder='targets_scaled_robust_scaler_winsorized0_5percentiles')
         # visualizer.run()
             
             
@@ -107,8 +120,8 @@ class ScalingStep(PipelineStep):
     
     def get_scaler(self):
         # scaler = MinMaxScaler()
-        scaler = StandardScaler()
-        # scaler = RobustScaler()
+        # scaler = StandardScaler()
+        scaler = RobustScaler()
         return scaler
     
     def perform_standard_scaling(self, df: DataFrame) -> DataFrame:
