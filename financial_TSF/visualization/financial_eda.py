@@ -1,7 +1,10 @@
+from time import time
 import matplotlib.pyplot as plt
 import os
+import pandas as pd
 import seaborn as sns
 from statsmodels.tsa.stattools import adfuller
+import matplotlib.dates as mdates
 
 class FinancialEDA:
     def __init__(self, df, output_path="plots/eda/"):
@@ -79,3 +82,80 @@ class FinancialEDA:
         plt.title(f"Distribution of {column}")
         plt.savefig(f"{self.output_path}{column}_dist.pdf")
         plt.close()
+        
+
+
+    def plot_split_points(self, df_data: list[pd.DataFrame], val_start_timestamp: pd.Timestamp, test_start_timestamp: pd.Timestamp):
+        # put in df
+        tickers = [df['ticker'].iloc[0] for df in df_data]
+        start_dates = [df.index.min() for df in df_data]
+        end_dates = [df.index.max() for df in df_data]
+        
+        df = pd.DataFrame({
+            'ticker': tickers, 
+            'start_date': start_dates, 
+            'end_date': end_dates
+        })
+        
+
+        df_plot = df.sort_values(by='start_date', ascending=False).head(15).copy()
+        
+        df_plot.reset_index(drop=True, inplace=True)
+
+        global_end = max(end_dates)
+        fig, ax = plt.subplots(figsize=(12, 7))
+
+        for i, row in df_plot.iterrows():
+            s = mdates.date2num(row['start_date'])
+            v = mdates.date2num(val_start_timestamp)
+            t = mdates.date2num(test_start_timestamp)
+            e = mdates.date2num(row['end_date'])
+            
+            # Training
+            if row['start_date'] < val_start_timestamp:
+                ax.hlines(i, s, v, colors='darkgrey', lw=10)
+            
+            # Validation
+            v_draw_start = max(s, v)
+            if v_draw_start < t:
+                ax.hlines(i, v_draw_start, t, colors='grey', lw=10)
+                
+            # Testing
+            t_draw_start = max(s, t)
+            if t_draw_start < e:
+                ax.hlines(i, t_draw_start, e, colors='lightgrey', lw=10)
+
+        line_coords = [mdates.date2num(val_start_timestamp), 
+                    mdates.date2num(test_start_timestamp), 
+                    mdates.date2num(global_end)]
+        
+        ax.vlines(line_coords, ymin=-1, ymax=len(df_plot), colors='black', linestyles='--', alpha=0.5)
+
+        y_text = len(df_plot) - 0.3
+        
+        def get_mid(d1, d2):
+            return float(mdates.date2num(d1 + (d2 - d1) / 2))
+
+        absolute_start = df_plot['start_date'].min()
+        
+        ax.text(get_mid(absolute_start, val_start_timestamp), y_text, 'Training', ha='center', weight='bold')
+        ax.text(get_mid(val_start_timestamp, test_start_timestamp), y_text, 'Validation', ha='center', weight='bold')
+        ax.text(get_mid(test_start_timestamp, global_end), y_text, 'Testing', ha='center', weight='bold')
+
+        ax.xaxis_date()
+        ax.xaxis.set_major_locator(mdates.YearLocator())
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
+        
+        ax.set_yticks(range(len(df_plot)))
+        ax.set_yticklabels(df_plot['ticker'])
+        
+        ax.set_ylim(-1, len(df_plot) + 0.5)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        
+        plt.tight_layout()
+        plt.savefig(f"{self.output_path}data_split_points.pdf")
+        plt.show()
+                
+
+            

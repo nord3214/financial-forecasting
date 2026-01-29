@@ -3,6 +3,7 @@ import pandas as pd
 from financial_TSF.data_models.config_data_model import AppConfig
 from financial_TSF.data_models.step_datamodel import StepResult
 from financial_TSF.steps.base_step import PipelineStep
+from financial_TSF.visualization.financial_eda import FinancialEDA
 
 HIGHLY_CORRELATED_FEATURES: list[str] = ['open', 'high', 'low', 'close']
 
@@ -99,6 +100,9 @@ class SplittingStep(PipelineStep):
                     data["y_val"] = y_val
                     data["y_test"] = y_test
                     break
+        
+        # eda = FinancialEDA(None, output_path="plots/eda/splitting_step/")
+        # eda.plot_split_points(step_result.data, val_start_timestamp, test_start_timestamp)
                 
         # remove tickers with insufficient data from step_result        
         if tickers_to_remove:
