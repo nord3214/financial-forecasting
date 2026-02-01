@@ -3,22 +3,17 @@ import random
 import torch
 from financial_TSF.data_models.config_data_model import AppConfig
 from financial_TSF.data_models.step_datamodel import StepResult
+from financial_TSF.models.MLP.model_params import MODEL_PARAMS
 from financial_TSF.models.base_model import BaseModel
 from financial_TSF.steps.batching_step import create_dataloader
 from torch import nn
 
 # inspired from https://github.com/christianversloot/machine-learning-articles/blob/main/how-to-create-a-neural-network-for-regression-with-pytorch.md
 
-MODEL_CONFIG = {
-    "hidden_layers": [64, 32], 
-    "dropout": 0.2,
-    "lr": 0.001,
-    "batch_size": 64,
-    "patience": 20
-}
+
 
 class MLPModel(BaseModel):
-    def __init__(self, config: AppConfig, model_config: dict = MODEL_CONFIG):
+    def __init__(self, config: AppConfig, model_config: dict = MODEL_PARAMS):
         self.config = config
         self.output_dim = len(config.settings.forecast_horizon)
         self.model: nn.Module = nn.Module()
@@ -27,7 +22,6 @@ class MLPModel(BaseModel):
         self.lr = model_config.get("lr", 0.001)
         self.batch_size = model_config.get("batch_size", 64)
         self.patience = model_config.get("patience", 20) # for early stopping
-        self.is_tune_hyperparameters = False
         
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f"Using device: {self.device} for training")
@@ -146,8 +140,9 @@ class MLPModel(BaseModel):
         print('Training process has finished.')
         
         self.model.load_state_dict(best_model_wts)
+                
 
-        return best_val_loss
+        return best_val_loss, 
     
     def predict(self, step_result) -> tuple:
         

@@ -18,7 +18,7 @@ class SavingStep(PipelineStep):
         save_path = Path(self.config.results.results_path)
         
         timestamp = datetime.now().strftime("%d%m%Y_%H%M%S")
-        run_dir = save_path / f"{timestamp}_{self.config.model.model_type}"
+        run_dir = save_path / self.config.model.model_type / str(self.config.features.complexity_levels) / f"{timestamp}_{self.config.model.model_type}"
         
         run_dir.mkdir(parents=True, exist_ok=True)
         

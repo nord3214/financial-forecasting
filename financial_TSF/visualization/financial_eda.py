@@ -98,7 +98,7 @@ class FinancialEDA:
         })
         
 
-        df_plot = df.sort_values(by='start_date', ascending=False).head(15).copy()
+        df_plot = df.sort_values(by='start_date', ascending=False).head(30).copy()
         
         df_plot.reset_index(drop=True, inplace=True)
 
