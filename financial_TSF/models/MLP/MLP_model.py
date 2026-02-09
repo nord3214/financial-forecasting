@@ -142,7 +142,7 @@ class MLPModel(BaseModel):
         self.model.load_state_dict(best_model_wts)
                 
 
-        return best_val_loss, 
+        return best_val_loss
     
     def predict(self, step_result) -> tuple:
         

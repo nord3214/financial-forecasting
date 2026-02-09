@@ -51,7 +51,8 @@ class RandomForestRegressor(BaseModel):
         from sklearn.ensemble import RandomForestRegressor
         rfr = RandomForestRegressor(
             n_jobs= -2,
-            random_state=1337
+            random_state=1337,
+            criterion="absolute_error"
         )
         tune_hyperparameters = False
         
@@ -76,7 +77,6 @@ class RandomForestRegressor(BaseModel):
                 estimator=rfr,
                 param_distributions=param_dist,
                 n_iter=15,              # try n_iter random combinations
-                scoring="neg_mean_squared_error",
                 cv=tscv,
                 n_jobs=-2,
                 verbose=1,
