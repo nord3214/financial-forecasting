@@ -28,6 +28,7 @@ class TechnicalIndicators:
         "%BBANDS": self.bollinger_bands_stationary,
         "NATR": self.normalized_average_true_range,
         "OBV": self.on_balance_volume_stationary,
+        "RETURN": self.simple_return,
         "LOGRET": self.log_return,
         "VI": self.vortex_indicator,
         "STOCH": self.stochastic_oscillator,
@@ -215,6 +216,11 @@ class TechnicalIndicators:
         mean_vol = data['volume'].rolling(window=window).mean()
         data[feature_name] = obv.diff(periods=window) / mean_vol
         
+        return data
+    
+    def simple_return(self, feature_name, data, window_size: int) -> DataFrame:
+        """Calculate the simple return."""
+        data[f'{feature_name}_{window_size}'] = data['close'] / data['close'].shift(window_size) - 0.001
         return data
     
     def log_return(self, feature_name, data, window_size: int) -> DataFrame:

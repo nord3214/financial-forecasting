@@ -1,4 +1,6 @@
 from time import time
+import numpy as np
+from scipy.stats import norm
 import matplotlib.pyplot as plt
 import os
 import pandas as pd
@@ -43,7 +45,7 @@ class FinancialEDA:
             'savefig.bbox': 'tight'   
         })
 
-    def plot_time_series(self, column, title, unit="USD"):
+    def plot_time_series(self, column, title, unit: str | None ="USD"):
         """Creates a standardized time series plot."""
         fig, ax = plt.subplots(figsize=(10, 5))
         
@@ -53,7 +55,11 @@ class FinancialEDA:
                 label=column)
         
         ax.set_title(title, pad=20)
-        ax.set_ylabel(f"{column} ({unit})")
+        if unit:
+            unit = f" ({unit})"
+        else:
+            unit = ""
+        ax.set_ylabel(f"{column}{unit}")
         ax.set_xlabel("Date")
         
         # Save using the standardized path and format
@@ -77,12 +83,28 @@ class FinancialEDA:
 
     def plot_distribution(self, column, range=None):
         plt.figure(figsize=(8, 5))
-        sns.histplot(self.df[column].dropna(), kde=True, bins=100, binrange=range)
-        plt.xlim(range)
+        data = self.df[column].dropna()
+        
+        sns.histplot(data, kde=True, bins=100, binrange=range, stat="density", alpha=0.4)
+        plt.xlim(range) if range else None
+        
+        #calc dist params
+        mu, std = norm.fit(data) 
+        
+        if range:
+            xmin, xmax = range
+        else:
+            xmin, xmax = plt.xlim()
+        x = np.linspace(xmin, xmax, 100)
+        
+        p = norm.pdf(x, mu, std)
+        
+        plt.plot(x, p, 'r', linewidth=2, label=f'Normal ($\mu={mu:.2e}, \sigma={std:.2e}$)')
+        
+        plt.legend()
         plt.title(f"Distribution of {column}")
         plt.savefig(f"{self.output_path}{column}_dist.pdf")
         plt.close()
-        
 
 
     def plot_split_points(self, df_data: list[pd.DataFrame], val_start_timestamp: pd.Timestamp, test_start_timestamp: pd.Timestamp):
@@ -158,4 +180,34 @@ class FinancialEDA:
         plt.show()
                 
 
-            
+
+    def plot_daily_volume(self, date_str):
+        """
+        Plots volume for a specific day to show intraday patterns.
+        Example date_str: '2023-10-27'
+        """
+        volume_col_str = 'volume'
+        #Filter for the specific day
+        daily_data = self.df.loc[date_str]
+        
+        fig, ax = plt.subplots(figsize=(12, 5))
+        
+        # Using fill_between creates
+        ax.fill_between(daily_data.index, daily_data[volume_col_str], 
+                        color=self.primary_color, alpha=0.3)
+        ax.plot(daily_data.index, daily_data[volume_col_str], 
+                color=self.primary_color, linewidth=1.5)
+        
+        # Format X-axis to show hours and minutes (HH:MM)
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+        
+        ax.set_title(f"Intraday Trading Volume: {date_str}", pad=20)
+        ax.set_ylabel("Volume (Shares)")
+        ax.set_xlabel("Time of Day")
+        
+        plt.tight_layout()
+        
+        save_path = os.path.join(self.output_path, f"volume_{date_str}.pdf")
+        plt.savefig(save_path)
+        plt.close()
+                

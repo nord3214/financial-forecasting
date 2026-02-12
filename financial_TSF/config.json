@@ -1,19 +1,20 @@
 {
     "data": {
         "concatenated_csv": "data/concatenated/",
-        "number_of_tickers": 3,
+        "number_of_tickers": 1,
         "start_date": "2015-01-01",
-        "end_date": "2015-12-31",
+        "end_date": "2023-12-31",
         "use_cached_processed_data": false,
         "processed_csv": "data/processed/"
     },
     "model": {
-        "modelType": "PatchTST"
+        "modelType": "LinearRegression"
     },
     "features": {
         "featureConfigPath": "financial_TSF/features/feature_config.json",
         "complexity_levels": [
-            10
+            10,
+            20
         ]
     },
     "pipeline": {

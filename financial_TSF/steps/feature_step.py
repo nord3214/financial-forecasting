@@ -80,7 +80,7 @@ class FeatureStep(PipelineStep):
             columns = data[0].columns.tolist()
             print("Columns after technical indicators: ", columns)
             
-            # run_eda(data[0], step_result.ticker_names[0])  # Just use the first ticker for EDA
+            run_eda(data[0], step_result.ticker_names[0])  # Just use the first ticker for EDA
             get_highly_correlated_features(data[0], threshold=0.9)
             
             return step_result
@@ -105,19 +105,25 @@ def run_eda(df: DataFrame, ticker: str) -> None:
     # ----------- EDA on OHLCV ----------------
     eda.plot_time_series(column='close', title=f'Close Price of {ticker}')
     
-    eda.check_adfuller('close')
-    eda.check_adfuller('LOGRET_1')
+    eda.plot_time_series(column='LOGRET_1', title=f'Log Return of {ticker}', unit=None)
+    # eda.plot_time_series(column='volume', title=f'Volume of {ticker}', unit=None)
+    eda.plot_time_series(column='LOG_VOLUME', title=f'Log Volume of {ticker}', unit=None)
+    
+    # eda.check_adfuller('close')
+    # eda.check_adfuller('LOGRET_1')
     eda.plot_distribution(column='LOGRET_1', range=(-0.025, 0.025))
-    eda.plot_distribution(column='volume', range=(0, 1.5e7))
+    # eda.plot_distribution(column='volume', range=(0, 1.5e7))
     eda.plot_distribution(column='LOG_VOLUME')
+    
+    eda.plot_daily_volume(date_str='2023-10-27')
     
     # ----------- EDA on calculated features ----------------
     
-    eda.plot_time_series(column='EMA_20', title=f'EMA 20 of {ticker}')
+    # eda.plot_time_series(column='EMA_20', title=f'EMA 20 of {ticker}')
     
-    for col in eda.df.columns:
-        if col in ['SMA_20', 'EMA_20', '%BBANDS', 'OBV', 'DAILY_CLOSE' ]:
-            eda.plot_time_series(column=col, title=f'{col} of {ticker}')
+    # for col in eda.df.columns:
+    #     if col in ['SMA_20', 'EMA_20', '%BBANDS', 'OBV', 'DAILY_CLOSE' ]:
+    #         eda.plot_time_series(column=col, title=f'{col} of {ticker}')
 
     
     for feature_col in eda.df.columns:
