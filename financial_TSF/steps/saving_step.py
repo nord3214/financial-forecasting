@@ -45,6 +45,10 @@ class SavingStep(PipelineStep):
         pd.DataFrame(step_result.y_train).to_csv(run_dir / "y_train.csv", index=False)
         pd.DataFrame(step_result.y_test_pred).to_csv(run_dir / "y_test_pred.csv", index=False)
         pd.DataFrame(step_result.y_train_pred).to_csv(run_dir / "y_train_pred.csv", index=False)
+        
+        # save metrics to csv for later analysis
+        metrics_df = pd.DataFrame.from_dict(step_result.metrics, orient='index')
+        metrics_df.to_csv(run_dir / "metrics.csv")        
 
         with open(run_dir / "summary.txt", "w") as f:
             f.write(f"Model Type: {self.config.model.model_type}\n")

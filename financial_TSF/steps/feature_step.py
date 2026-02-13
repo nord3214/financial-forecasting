@@ -80,7 +80,7 @@ class FeatureStep(PipelineStep):
             columns = data[0].columns.tolist()
             print("Columns after technical indicators: ", columns)
             
-            run_eda(data[0], step_result.ticker_names[0])  # Just use the first ticker for EDA
+            # run_eda(data[0], step_result.ticker_names[0])  # Just use the first ticker for EDA
             get_highly_correlated_features(data[0], threshold=0.9)
             
             return step_result
