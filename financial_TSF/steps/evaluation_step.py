@@ -70,8 +70,11 @@ class EvaluationStep(PipelineStep):
             
             # ------------------------- economic evaluation -------------------------
         
-            sim = TopKSimulator(step_result.split_data, transaction_cost_bps=1.0)
-            sim.prepare_data(horizon_col=f"target_{self.config.settings.forecast_horizon[0]}")
+            sim = TopKSimulator(step_result.split_data, transaction_cost_bps=
+                                
+                                
+                                1.0)
+            sim.prepare_data(horizon_col=f"target_{self.config.settings.forecast_horizon[i]}")
             
             sim.run_simulation(k=5)
 

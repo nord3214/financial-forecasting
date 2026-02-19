@@ -26,6 +26,8 @@ class TopKSimulator:
     def prepare_data(self, horizon_col: str, actual_return_col: str = 'return_next_interval'):
         """
         Transforms tickerdata into global DataFrame for Top-K evaluation
+        return matrix: DataFrame with actual log return returns for each ticker and time step for 1 interval
+        signal matrix: DataFrame with predicted log return signals for each ticker and time step for horizon interval
         :param horizon_col: column name for predicted returns at specific horizon
         :param actual_return_col: optional column name for actual returns at specific horizon 
         if None - hold to maturity used
@@ -78,7 +80,9 @@ class TopKSimulator:
         
     def run_simulation(self, k: int = 5):
         """
-        Run Top-K trading simulation (Vectorized Version)
+        Run Top-K trading simulation 
+        Uses predicted signals to determine top k long and short positions at each time step.
+        Calculates the actual returns only on the simple returns of next interval (return matrix) 
         """
         if not hasattr(self, 'signal_matrix') or not hasattr(self, 'return_matrix') or self.return_matrix is None:
             raise ValueError("Data not prepared. Call prepare_data() before running simulation.")
