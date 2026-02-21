@@ -21,6 +21,7 @@ pyarrow = "^22.0.0"
 stattools = "^0.0.4"
 statsmodels = "^0.14.6"
 neuralforecast = "^3.1.4"
+transformers = "^5.2.0"
 
 
 

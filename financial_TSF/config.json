@@ -1,14 +1,14 @@
 {
     "data": {
         "concatenated_csv": "data/concatenated/",
-        "number_of_tickers": 15,
+        "number_of_tickers": 2,
         "start_date": "2015-01-01",
-        "end_date": "2015-12-31",
+        "end_date": "2015-06-30",
         "use_cached_processed_data": false,
         "processed_csv": "data/processed/"
     },
     "model": {
-        "modelType": "RF"
+        "modelType": "PatchTST"
     },
     "features": {
         "featureConfigPath": "financial_TSF/features/feature_config.json",
@@ -22,7 +22,6 @@
             "FeatureStep",
             "SplittingStep",
             "NormalizingStep",
-            "ModelChangesStep",
             "TrainingStep",
             "EvaluationStep",
             "SavingStep"
