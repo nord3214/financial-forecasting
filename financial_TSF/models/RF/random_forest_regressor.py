@@ -1,7 +1,7 @@
 from typing import Any, Optional
+import numpy as np
 import pandas as pd
-from sklearn.feature_selection import RFECV
-from sklearn.model_selection import RandomizedSearchCV, TimeSeriesSplit
+from sklearn.metrics import mean_squared_error
 from financial_TSF.data_models.step_datamodel import StepResult
 from financial_TSF.models.base_model import BaseModel
 from scipy.stats import randint
@@ -17,18 +17,7 @@ HYPERPARAMS: dict[str, Any] = {
     "max_depth": 15,
 }
 
-SETTINGS: dict[str, Any] = {
-    "forecast_horizon": 12,
-    "use_RFECV": False,
-}
-
-RFECV_SETTINGS: dict[str, Any] = {
-    "step": 1,
-    "cv_splits": 5,
-    "scoring": "neg_mean_squared_error",
-}
-
-class RandomForestRegressor(BaseModel):
+class RandomForestModel(BaseModel):
     def __init__(self, config: Any) -> None:
         self.config = config
         self.estimator: Optional[Any] = None  # placeholder fitted estimator model
@@ -52,57 +41,13 @@ class RandomForestRegressor(BaseModel):
         rfr = RandomForestRegressor(
             n_jobs= -2,
             random_state=1337,
-            criterion="absolute_error"
+            criterion="squared_error"
         )
-        tune_hyperparameters = False
         
-        if tune_hyperparameters:
-            print("start  Hyperparameter-Tuning (RandomizedSearch)...")
-                        
-            # different parameters to tune
-            param_dist = {
-                "n_estimators": randint(100, 500),      
-                "max_depth": [10, 20, 30, None],       
-                "min_samples_leaf": randint(20, 100),  # higher value helps against noise
-                "min_samples_split": randint(2, 20),
-                "max_features": ["sqrt", "log2", None]
-            }
-
-            
-            # tuning with time series split cross-validation so no shuffle happens
-            tscv = TimeSeriesSplit(n_splits=3)
-
-            # randomized Search
-            search = RandomizedSearchCV(
-                estimator=rfr,
-                param_distributions=param_dist,
-                n_iter=15,              # try n_iter random combinations
-                cv=tscv,
-                n_jobs=-2,
-                verbose=1,
-                random_state=1337
-            )
-            
-            # for now only use part of train data 
-            # print("Head of X_train: ", self.X_train.iloc[-20000:].head(25))
-            # search.fit(self.X_train.iloc[-1000:], self.y_train.iloc[-1000:])
-            
-            search.fit(self.X_train, self.y_train)
-
-            print(f"Best parameters found: {search.best_params_}")
-            with open("rfr_best_params.txt", "w") as f:
-                f.write(str(search.best_params_))
-                
-            self.estimator = search.best_estimator_
-            
-            # # Save the best params for later use
-            # self.best_params = search.best_params_
-            
-        else:
-            # use hardcoded hyperparameters
-            final_params = HYPERPARAMS
-            
-            self.estimator = rfr.set_params(**final_params)
+        # use hyperparameters
+        final_params = HYPERPARAMS
+        
+        self.estimator = rfr.set_params(**final_params)
             
         rfr.fit(self.X_train, self.y_train)
         self.estimator = rfr
@@ -135,4 +80,63 @@ class RandomForestRegressor(BaseModel):
 
 
         return self.y_test, y_test_pred, self.y_train, y_train_pred
-        
+
+    def tune_hyperparameters(self, step_result: StepResult) -> dict:
+        """
+        random search over hyperparameters using (X_val / y_val) and 
+        update HYPERPARAMS global dict with best config for subsequent fit() call
+        """
+        from sklearn.ensemble import RandomForestRegressor as _RFR
+
+        print("[RF] Starting hyperparameter tuning with validation set...")
+
+        X_train = step_result.X_train
+        y_train = step_result.y_train
+        X_val   = step_result.X_val
+        y_val   = step_result.y_val
+
+
+        # search space
+        param_grid = {
+            "n_estimators":     [100, 200, 300, 500],
+            "max_depth":        [10, 15, 20, 30, None],
+            "min_samples_leaf": [10, 20, 40, 60, 100],
+            "min_samples_split":[2, 5, 10, 20],
+            "max_features":     ["sqrt", "log2", 0.3, 0.5, None],
+        }
+
+        n_iter = 30  # number of combinations 
+        rng = np.random.RandomState(1337)
+
+        best_mse = float("inf")
+        best_params: dict = {}
+        results: list[dict] = []
+
+        for i in range(n_iter):
+            # sample one random config dict
+            params = {k: rng.choice(v) for k, v in param_grid.items()}
+
+            rfr = _RFR(
+                **params,
+                n_jobs=-2,
+                random_state=1337,
+                criterion="squared_error",
+            )
+            rfr.fit(X_train, y_train)
+            val_pred = rfr.predict(X_val)
+            mse = mean_squared_error(y_val, val_pred)
+
+            results.append({**params, "val_mse": mse})
+            print(f"  [{i+1:>2}/{n_iter}] val_MSE={mse:.6f}  {params}")
+
+            if mse < best_mse:
+                best_mse = mse
+                best_params = params
+
+        print(f"\n[RF] Best val_MSE={best_mse:.6f}")
+        print(f"[RF] Best params: {best_params}")
+
+        #update global HYPERPARAMS with best params
+        HYPERPARAMS.update(best_params)
+
+        return {"best_params": best_params, "val_mse": best_mse}
