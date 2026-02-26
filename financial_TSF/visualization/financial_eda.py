@@ -17,9 +17,7 @@ class FinancialEDA:
         
         # Define class-wide constants for styling
         self.primary_color = '#1a4a73'  # Professional Navy
-        self.secondary_color = '#808080' # Professional Grey
         self.font_family = 'serif'       # Matches LaTeX/Thesis body text
-        
         # Apply global Matplotlib settings
         self._apply_global_style()
 

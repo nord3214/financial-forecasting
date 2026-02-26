@@ -10,6 +10,7 @@ class ScalingStep(PipelineStep):
     def __init__(self, config) -> None:
         self.config = config
         self.use_winsorizing = True
+        self.winsorize_quantile_X = 0.01
 
 
     def execute(self, step_result: StepResult) -> StepResult:
@@ -18,6 +19,11 @@ class ScalingStep(PipelineStep):
         !!! Also removes ticker column for now !!!
         """
         print("Received data for Normalizing Step with", len(step_result.split_data), "dataframes.")
+        
+        # create unscaled boxplots for all dataframes before scaling
+        # x_train_scaled = [split['X_train'] for split in step_result.split_data]
+        # visualizer = FeatureVisualization(x_train_scaled, folder='boxplots/unscaled')
+        # visualizer.run()
         
         if self.use_winsorizing:
             
@@ -28,14 +34,14 @@ class ScalingStep(PipelineStep):
                 df_test = split['X_test']
                 
                 df_train = df_train.set_index('ticker', append=True)
-                def_val = df_val.set_index('ticker', append=True)
+                df_val = df_val.set_index('ticker', append=True)
                 df_test = df_test.set_index('ticker', append=True)
                 
-                lower_x = df_train.quantile(0.01)
-                upper_x = df_train.quantile(0.99)
+                lower_x = df_train.quantile(self.winsorize_quantile_X)
+                upper_x = df_train.quantile(1 - self.winsorize_quantile_X)
                 
                 df_train = df_train.clip(lower=lower_x, upper=upper_x, axis=1)
-                df_val = def_val.clip(lower=lower_x, upper=upper_x, axis=1)
+                df_val = df_val.clip(lower=lower_x, upper=upper_x, axis=1)
                 df_test = df_test.clip(lower=lower_x, upper=upper_x, axis=1)
                 
                 split['X_test'] = df_test
@@ -57,8 +63,18 @@ class ScalingStep(PipelineStep):
                 split['y_test'] = df_test
                 split['y_val'] = df_val
                 split['y_train'] = df_train
+                
+        # create boxplots after winsorizing but before scaling
+        # x_train_scaled = [split['X_train'] for split in step_result.split_data]
+        # visualizer = FeatureVisualization(x_train_scaled, folder=f'boxplots/winsorized_{self.winsorize_quantile_X*100}_percentiles')
+        # visualizer.run()
         
         for idx, split_data in enumerate(step_result.split_data):
+            if not self.use_winsorizing:
+                split_data['X_train'].set_index('ticker', append=True, inplace=True)
+                split_data['X_val'].set_index('ticker', append=True, inplace=True)
+                split_data['X_test'].set_index('ticker', append=True, inplace=True)
+                
             
            
             x_scaler = self.get_scaler()
@@ -89,9 +105,14 @@ class ScalingStep(PipelineStep):
             step_result.split_data[idx]['x_scaler'] = x_scaler
             step_result.split_data[idx]['y_scaler'] = y_scaler
             
-        # x_train_scaled = [split['X_train'] for split in step_result.split_data]
-        # visualizer = FeatureVisualization(x_train_scaled, folder='30_scaled_features_standard_scaler_clipped_1percentiles')
-        # visualizer.run()
+        x_train_scaled = [split['X_train'] for split in step_result.split_data]
+        
+        # if self.use_winsorizing:
+        #     visualizer = FeatureVisualization(x_train_scaled, folder=f'/boxplots/robustscaled_winsorized_{self.winsorize_quantile_X*100}_percentiles')
+        #     visualizer.run()
+        # else:
+        #     visualizer = FeatureVisualization(x_train_scaled, folder='/boxplots/robustscaled')
+        #     visualizer.run()
         
         # y_train_scaled = [split['y_train'] for split in step_result.split_data]
         # visualizer = FeatureVisualization(y_train_scaled, folder='targets_scaled_robust_scaler_winsorized0_5percentiles')
