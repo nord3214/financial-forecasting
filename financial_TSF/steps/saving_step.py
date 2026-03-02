@@ -1,12 +1,12 @@
 from datetime import datetime
 import json
-from pathlib import Path
 import shutil
 import joblib
 import pandas as pd
 from financial_TSF.data_models.config_data_model import AppConfig
 from financial_TSF.data_models.step_datamodel import StepResult
 from financial_TSF.steps.base_step import PipelineStep
+from financial_TSF.utils.utils import get_result_path
 
 
 class SavingStep(PipelineStep):
@@ -15,13 +15,7 @@ class SavingStep(PipelineStep):
         
     def execute(self, step_result: StepResult) -> StepResult:
         
-        save_path = Path(self.config.results.results_path)
-        
-        timestamp = datetime.now().strftime("%d%m%Y_%H%M%S")
-        feature_complexity_str = "_".join(map(str, self.config.features.complexity_levels))
-        
-        run_dir = save_path / self.config.model.model_type / feature_complexity_str / f"{timestamp}_{self.config.model.model_type}"
-        run_dir.mkdir(parents=True, exist_ok=True)
+        run_dir = get_result_path(self.config, step_result)
         
         # save model 
         joblib.dump(step_result.model_instance, run_dir / "model.pkl")

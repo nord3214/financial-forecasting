@@ -1,10 +1,15 @@
+import json
+from pathlib import Path
 from typing import Any, Optional
 import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_squared_error
+from financial_TSF.data_models.config_data_model import AppConfig
 from financial_TSF.data_models.step_datamodel import StepResult
 from financial_TSF.models.base_model import BaseModel
 from scipy.stats import randint
+
+from financial_TSF.utils.utils import get_result_path
 
 
 
@@ -18,7 +23,7 @@ HYPERPARAMS: dict[str, Any] = {
 }
 
 class RandomForestModel(BaseModel):
-    def __init__(self, config: Any) -> None:
+    def __init__(self, config: AppConfig) -> None:
         self.config = config
         self.estimator: Optional[Any] = None  # placeholder fitted estimator model
         
@@ -105,7 +110,7 @@ class RandomForestModel(BaseModel):
             "max_features":     ["sqrt", "log2", 0.3, 0.5, None],
         }
 
-        n_iter = 30  # number of combinations 
+        n_iter = 15  # number of combinations 
         rng = np.random.RandomState(1337)
 
         best_mse = float("inf")
@@ -115,6 +120,7 @@ class RandomForestModel(BaseModel):
         for i in range(n_iter):
             # sample one random config dict
             params = {k: rng.choice(v) for k, v in param_grid.items()}
+            print("[RF] current training with params: ", params)
 
             rfr = _RFR(
                 **params,
@@ -135,6 +141,20 @@ class RandomForestModel(BaseModel):
 
         print(f"\n[RF] Best val_MSE={best_mse:.6f}")
         print(f"[RF] Best params: {best_params}")
+        
+        result_dir: Path = get_result_path(self.config, step_result) / "hyperparameter_tuning"
+        result_dir.mkdir(parents=True, exist_ok=True)
+        
+        pd.DataFrame(results).to_csv(result_dir / f"hyperparameter_tuning_results_for{self.config.features.complexity_levels}.csv", index=False)
+        
+        for param in best_params:
+            val = best_params[param]
+            if isinstance(val, np.generic):
+                best_params[param] = val.item()
+            
+        with open(result_dir / f"best_params_for{self.config.features.complexity_levels}.json", "w") as f:
+            json.dump(best_params, f, indent=4)
+            print(f"[RF] Hyperparameter tuning results saved to {result_dir / f'best_params_for{self.config.features.complexity_levels}.json'}")
 
         #update global HYPERPARAMS with best params
         HYPERPARAMS.update(best_params)

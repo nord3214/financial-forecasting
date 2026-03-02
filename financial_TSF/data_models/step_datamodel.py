@@ -32,6 +32,6 @@ class StepResult:
     X_val: Any = None
     y_val: Any = None
     y_train_pred: Any = None
-    metrics: dict[str, Any] = field(default_factory=dict),
+    metrics: dict[str, Any] = field(default_factory=dict)
     ticker_names: list[str] = field(default_factory=list)
     start_time: Any = None
