@@ -171,11 +171,54 @@ class MLPModel(BaseModel):
         return y_test, y_test_pred, y_train, y_train_pred
     
     def tune_hyperparameters(self, step_result: StepResult) -> dict:
-        print("Starting hyperparameter tuning...")
-    
-        best_config = run_hyperparameter_tuning(self.config, step_result)
-        
-        return best_config
+        """
+        random search over hyperparameters using X_val / y_val
+        The best config is written back into
+        self so the subsequent fit() call uses it.
+        """
+        print("[MLP] Starting hyperparameter tuning with validation set...")
+
+        param_grid = {
+            "hidden_layers": [[256, 256, 128, 64], [256, 256, 128], [256, 128, 64],
+                              [128, 64, 32], [512, 256, 128], [128, 128]],
+            "dropout": [0.1, 0.2, 0.3, 0.5],
+            "lr": [1e-3, 5e-4, 1e-4],
+            "batch_size": [64, 128, 512, 1024],
+        }
+
+        n_iter = 15
+        best_loss = float("inf")
+        best_config: dict = {}
+
+        for i in range(n_iter):
+            model_config = {
+                "hidden_layers": random.choice(param_grid["hidden_layers"]),
+                "dropout":       random.choice(param_grid["dropout"]),
+                "lr":            random.choice(param_grid["lr"]),
+                "batch_size":    random.choice(param_grid["batch_size"]),
+                "patience":      20,
+            }
+
+            print(f"\n  [{i+1:>2}/{n_iter}] Config: {model_config}")
+
+            candidate = MLPModel(self.config, model_config=model_config)
+            val_loss = candidate.fit(step_result)
+            print(f"  [{i+1:>2}/{n_iter}] val_loss={val_loss:.6f}")
+
+            if val_loss < best_loss:
+                best_loss = val_loss
+                best_config = model_config
+
+        print(f"\n[MLP] Best val_loss={best_loss:.6f}")
+        print(f"[MLP] Best config: {best_config}")
+
+        # update self so the next fit() uses the best config
+        self.hidden_layers = best_config["hidden_layers"]
+        self.dropout       = best_config["dropout"]
+        self.lr            = best_config["lr"]
+        self.batch_size    = best_config["batch_size"]
+
+        return {"best_config": best_config, "val_loss": best_loss}
 
 
 class DynamicMLP(nn.Module):
@@ -203,40 +246,40 @@ class DynamicMLP(nn.Module):
 
     
     
-def run_hyperparameter_tuning(pipeline_config: AppConfig, step_result):
-    # define search space
-    param_grid = {
-        "hidden_layers": [[256, 256, 128, 64], [256, 256, 128], [256, 128, 64]],
-        "dropout": [0.1, 0.2, 0.5],
-        "lr": [0.001, 0.0005, 0.0001],
-        "batch_size": [512, 1024]
-    }
+# def run_hyperparameter_tuning(pipeline_config: AppConfig, step_result):
+#     # define search space
+#     param_grid = {
+#         "hidden_layers": [[256, 256, 128, 64], [256, 256, 128], [256, 128, 64]],
+#         "dropout": [0.1, 0.2, 0.5],
+#         "lr": [0.001, 0.0005, 0.0001],
+#         "batch_size": [512, 1024]
+#     }
     
-    best_loss = float('inf')
-    best_config = {}
+#     best_loss = float('inf')
+#     best_config = {}
     
-    # loop 10 time over random configurations
-    for i in range(15):
-        model_config = {
-            "hidden_layers": random.choice(param_grid["hidden_layers"]),
-            "dropout": random.choice(param_grid["dropout"]),
-            "lr": random.choice(param_grid["lr"]),
-            "batch_size": random.choice(param_grid["batch_size"]),
-            "epochs": 50,
-            "patience": 20
-        }
+#     # loop 10 time over random configurations
+#     for i in range(15):
+#         model_config = {
+#             "hidden_layers": random.choice(param_grid["hidden_layers"]),
+#             "dropout": random.choice(param_grid["dropout"]),
+#             "lr": random.choice(param_grid["lr"]),
+#             "batch_size": random.choice(param_grid["batch_size"]),
+#             "epochs": 50,
+#             "patience": 20
+#         }
         
-        print(f"Testing Config {i}: {model_config}")
+#         print(f"Testing Config {i}: {model_config}")
         
-        # modell training using validation set
-        model = MLPModel(pipeline_config, model_config=model_config)
-        final_val_loss = model.fit(step_result) 
-        print(f"Validation Loss for Config {i}: {final_val_loss}")
+#         # modell training using validation set
+#         model = MLPModel(pipeline_config, model_config=model_config)
+#         final_val_loss = model.fit(step_result) 
+#         print(f"Validation Loss for Config {i}: {final_val_loss}")
         
-        # if current loss ist better(lower), save config and loss
-        if final_val_loss < best_loss:
-           best_loss = final_val_loss
-           best_config = model_config
+#         # if current loss ist better(lower), save config and loss
+#         if final_val_loss < best_loss:
+#            best_loss = final_val_loss
+#            best_config = model_config
             
-    print("Winner:", best_config, "with best loss:", best_loss)
-    return best_config
+#     print("Winner:", best_config, "with best loss:", best_loss)
+#     return best_config

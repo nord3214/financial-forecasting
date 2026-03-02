@@ -74,7 +74,9 @@ class SplittingStep(PipelineStep):
             X_train, X_val, X_test, y_train, y_val, y_test = self.split_data(ticker_df, val_start_timestamp=val_start_timestamp, test_start_timestamp=test_start_timestamp, target_column_names=target_column_names)
 
             ticker_name = ticker_df["ticker"].iloc[0]
-            if X_train.empty or X_val.empty:
+            ## !!! training data should have same size as val data for fair process !!!
+            min_timestamp_needed = val_start_timestamp - (test_start_timestamp-val_start_timestamp)
+            if X_train.empty or X_val.empty or X_train.index.min() > min_timestamp_needed:
                 print(f"Not enough data for ticker {ticker_name} to split. Wont use this ticker for training/testing.")
                 tickers_to_remove.append(ticker_name)
                     # step_result.ticker_names.remove(ticker_name)
