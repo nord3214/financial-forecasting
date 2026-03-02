@@ -1,4 +1,5 @@
 import copy
+import random
 from typing import Any
 
 import numpy as np
@@ -16,7 +17,7 @@ from financial_TSF.models.base_model import BaseModel
 
 PATCHTST_PARAMS: dict[str, Any] = {
     "context_length": 128,       # lookback window intervals
-    "patch_length": 32,          # length of each patch
+    "patch_length": 4,          # length of each patch
     "d_model": 64,              # transformer hidden dimension
     "num_attention_heads": 4,
     "num_hidden_layers": 2,
@@ -32,23 +33,92 @@ PATCHTST_PARAMS: dict[str, Any] = {
 
 # sliding-window dataset 
 
-class _SlidingWindowDataset(Dataset):
+class _LazySlidingWindowDataset(Dataset):
     """
-    Wraps pre-built numpy arrays of shape
-        windows : (N, context_length, num_features)
-        targets : (N, num_targets)
-    into a standard PyTorch Dataset.
+    Memory-efficient dataset that builds sliding windows **on-the-fly**
+    in __getitem__ instead of pre-materialising all (N, ctx, F) arrays.
+
+    Each ticker segment is stored as a 2-D array; a global index is
+    mapped to (ticker_idx, local_row) at access time.
     """
 
-    def __init__(self, windows: np.ndarray, targets: np.ndarray):
-        self.windows = torch.from_numpy(windows)
-        self.targets = torch.from_numpy(targets)
+    def __init__(
+        self,
+        segments: list[np.ndarray],
+        targets: list[np.ndarray],
+        context_length: int,
+    ):
+        """
+        Parameters
+        ----------
+        segments : list of np.ndarray, each (T_i, F)
+            Per-ticker feature arrays (already concatenated with any
+            look-back prefix, so the window can always be read directly).
+        targets : list of np.ndarray, each (N_i, num_targets)
+            Per-ticker target arrays (length = number of *actual* rows,
+            which may be shorter than T_i when a prefix was prepended).
+        context_length : int
+            Sliding-window size.
+        """
+        self.segments = segments
+        self.targets = targets
+        self.context_length = context_length
+
+        # build an index map: global_idx -> (segment_idx, local_row)
+        # local_row refers to the target row; the window is read from
+        # the segment ending at (offset + local_row).
+        self._offsets: list[int] = []          # prefix offset per segment
+        self._lengths: list[int] = []          # number of target rows
+        self._cum_lengths: list[int] = []      # cumulative lengths
+
+        total = 0
+        for seg, tgt in zip(segments, targets):
+            n_targets = len(tgt)
+            offset = len(seg) - n_targets       # prefix rows
+            self._offsets.append(offset)
+            self._lengths.append(n_targets)
+            total += n_targets
+            self._cum_lengths.append(total)
+
+        self._total = total
 
     def __len__(self) -> int:
-        return len(self.windows)
+        return self._total
 
     def __getitem__(self, idx: int):
-        return self.windows[idx], self.targets[idx]
+        # binary-search for the right segment
+        seg_idx = self._find_segment(idx)
+        local_row = idx - (self._cum_lengths[seg_idx] - self._lengths[seg_idx])
+
+        seg = self.segments[seg_idx]
+        offset = self._offsets[seg_idx]
+        abs_idx = offset + local_row            # position inside segment
+
+        start = max(0, abs_idx - self.context_length + 1)
+        window = seg[start: abs_idx + 1]        # (<=ctx, F)
+
+        # left-zero-pad when not enough history
+        if len(window) < self.context_length:
+            pad = np.zeros(
+                (self.context_length - len(window), seg.shape[1]),
+                dtype=np.float32,
+            )
+            window = np.concatenate([pad, window], axis=0)
+
+        target = self.targets[seg_idx][local_row]
+        return torch.from_numpy(window), torch.from_numpy(target)
+
+    # -- helpers --------------------------------------------------------
+    def _find_segment(self, idx: int) -> int:
+        """Return segment index for a global row index (binary search)."""
+        lo, hi = 0, len(self._cum_lengths) - 1
+        while lo < hi:
+            mid = (lo + hi) // 2
+            if self._cum_lengths[mid] <= idx:
+                lo = mid + 1
+            else:
+                hi = mid
+        return lo
 
 
 
@@ -125,20 +195,25 @@ class PatchTSTWrapper(BaseModel):
         x_key: str,
         y_key: str,
         prefix_x_key: str | None = None,
-    ) -> _SlidingWindowDataset:
+    ) -> _LazySlidingWindowDataset:
         """
-        Create a single concatenated dataset from the per-ticker split data. 
+        Create a single **lazy** dataset from the per-ticker split data.
+        Windows are computed on-the-fly in __getitem__ so that only the
+        raw 2-D feature matrices need to stay in RAM.
 
         Parameters
+        ----------
         split_data : per-ticker list from by the pipeline container each ticker dict.
-        x_key / y_key : containing the keys for features and targets in the ticker dicts (e.g. "X_train" and "y_train" for the training dataset).
-        prefix_x_key : for val and test dataset creation, use the prefix key for look-back windows to avoid zero-padding the earliest rows 
+        x_key / y_key : containing the keys for features and targets in the ticker dicts.
+        prefix_x_key : for val and test dataset creation, use the prefix key
+            for look-back windows to avoid zero-padding the earliest rows.
+
         Returns
-        A concatenated _SlidingWindowDataset for the specified split.
+        -------
+        A _LazySlidingWindowDataset for the specified split.
         """
-        
-        all_windows: list[np.ndarray] = []
-        all_targets: list[np.ndarray] = []
+        segments: list[np.ndarray] = []
+        targets:  list[np.ndarray] = []
 
         for split in split_data:
             X = split[x_key].values.astype(np.float32)
@@ -146,16 +221,18 @@ class PatchTSTWrapper(BaseModel):
 
             if prefix_x_key is not None and prefix_x_key in split:
                 prefix = split[prefix_x_key].values.astype(np.float32)
-                windows = self._build_windows_with_prefix(prefix, X, self.context_length)
+                # keep only the tail needed for look-back
+                tail = prefix[-(self.context_length - 1):] \
+                       if len(prefix) >= self.context_length - 1 else prefix
+                segment = np.concatenate([tail, X], axis=0)
             else:
-                windows = self._build_windows(X, self.context_length)
+                segment = X
 
-            all_windows.append(windows)
-            all_targets.append(y)
+            segments.append(segment)
+            targets.append(y)
 
-        return _SlidingWindowDataset(
-            np.concatenate(all_windows, axis=0),
-            np.concatenate(all_targets, axis=0),
+        return _LazySlidingWindowDataset(
+            segments, targets, self.context_length,
         )
 
 
@@ -177,7 +254,7 @@ class PatchTSTWrapper(BaseModel):
             num_input_channels=num_features,
             context_length=self.context_length,
             patch_length=self.patch_length,
-            patch_stride=self.patch_length,          # non-overlapping
+            patch_stride=4,          # non-overlapping
             prediction_length=self.num_targets,
             d_model=self.d_model,
             num_attention_heads=self.num_heads,
@@ -185,7 +262,7 @@ class PatchTSTWrapper(BaseModel):
             ffn_dim=self.ffn_dim,
             dropout=self.dropout,
             head_dropout=self.head_dropout,
-            scaling="std",
+            scaling=False,                          # no internal scaling, already scaled in pipeline
             pre_norm=True,
             norm_type="batchnorm",
             num_targets=self.num_targets,
@@ -270,8 +347,14 @@ class PatchTSTWrapper(BaseModel):
         y_train_pred = self._predict_splits(
             step_result.split_data, "X_train",
         )
-        # :TODO validate that the shapes match the global concatenated arrays in step_result.y_test / y_train and the ticker order is correct
-
+        
+        #validating that the ticker order in the split_data matches the global y_train / y_test arrays in step_result for correct alignment of predictions and target for evaluation step
+        ticker_order_split_data = [split['ticker_name'] for split in step_result.split_data]
+        ticker_order_y_train = step_result.y_train.index.get_level_values('ticker').unique().tolist()
+        if ticker_order_split_data != ticker_order_y_train:
+            raise ValueError(f"Ticker order mismatch between split_data and y_train! "
+                             f"split_data order: {ticker_order_split_data}  y_train order: {ticker_order_y_train}")
+        
         return step_result.y_test, y_test_pred, step_result.y_train, y_train_pred
 
     # ------------------------------------------------------------------ #
@@ -290,13 +373,14 @@ class PatchTSTWrapper(BaseModel):
 
             if prefix_key is not None and prefix_key in split:
                 prefix = split[prefix_key].values.astype(np.float32)
-                windows = self._build_windows_with_prefix(prefix, X, self.context_length)
+                tail = prefix[-(self.context_length - 1):] \
+                       if len(prefix) >= self.context_length - 1 else prefix
+                segment = np.concatenate([tail, X], axis=0)
             else:
-                windows = self._build_windows(X, self.context_length)
+                segment = X
 
-            # dummy targets – only needed to satisfy the Dataset wrapper
-            dummy_y = np.zeros((len(windows), self.num_targets), dtype=np.float32)
-            ds     = _SlidingWindowDataset(windows, dummy_y)
+            dummy_y = np.zeros((len(X), self.num_targets), dtype=np.float32)
+            ds     = _LazySlidingWindowDataset([segment], [dummy_y], self.context_length)
             loader = DataLoader(ds, batch_size=self.batch_size, shuffle=False)
 
             ticker_preds: list[np.ndarray] = []
@@ -309,4 +393,57 @@ class PatchTSTWrapper(BaseModel):
             all_preds.append(np.concatenate(ticker_preds, axis=0))
 
         return np.concatenate(all_preds, axis=0)
-    
+
+    def tune_hyperparameters(self, step_result: StepResult) -> dict:
+        print("Starting hyperparameter tuning...")
+
+        best_config = run_hyperparameter_tuning(self.config, step_result)
+
+        return best_config
+
+
+def run_hyperparameter_tuning(pipeline_config: AppConfig, step_result: StepResult) -> dict:
+    # define search space
+    param_grid = {
+        "context_length": [64, 128, 256],
+        "patch_length": [4, 8, 16],
+        "d_model": [32, 64, 128],
+        "num_attention_heads": [2, 4, 8],
+        "num_hidden_layers": [1, 2, 3],
+        "ffn_dim": [64, 128, 256],
+        "batch_size": [32, 64, 128],
+        "lr": [1e-3, 5e-4, 1e-4],
+    }
+
+    best_loss = float("inf")
+    best_config: dict = {}
+
+    # loop 15 times over random configurations
+    for i in range(15):
+        model_config = {
+            "context_length": random.choice(param_grid["context_length"]),
+            "patch_length": random.choice(param_grid["patch_length"]),
+            "d_model": random.choice(param_grid["d_model"]),
+            "num_attention_heads": random.choice(param_grid["num_attention_heads"]),
+            "num_hidden_layers": random.choice(param_grid["num_hidden_layers"]),
+            "ffn_dim": random.choice(param_grid["ffn_dim"]),
+            "dropout": 0.2,
+            "head_dropout": 0.2,
+            "batch_size": random.choice(param_grid["batch_size"]),
+            "lr": random.choice(param_grid["lr"]),
+            "num_epochs": 100,
+            "patience": 30,
+        }
+
+        print(f"Testing Config {i}: {model_config}")
+
+        model = PatchTSTWrapper(pipeline_config, model_config=model_config)
+        final_val_loss = model.fit(step_result)
+        print(f"Validation Loss for Config {i}: {final_val_loss}")
+
+        if final_val_loss < best_loss:
+            best_loss = final_val_loss
+            best_config = model_config
+
+    print("Winner:", best_config, "with best loss:", best_loss)
+    return best_config
