@@ -70,7 +70,7 @@ class GraphVisualization:
 
         fig, ax = plt.subplots(figsize=(10, 4))
         ax.plot(actual.values,    color=self.primary_color,   linewidth=1.5, label="Ground Truth")
-        ax.plot(predicted.values, color=self.secondary_color, linewidth=1.5, linestyle="--", label="Forecast")
+        ax.plot(predicted.values, color=self.secondary_color, linewidth=1.5, label="Forecast")
         ax.set_title(f"Return Prediction — {col} (first 7 days)")
         ax.set_xlabel("Number of Predictions")
         ax.set_ylabel("Log Return")

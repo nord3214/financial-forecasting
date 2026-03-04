@@ -10,7 +10,9 @@ class ScalingStep(PipelineStep):
     def __init__(self, config) -> None:
         self.config = config
         self.use_winsorizing = True
+        self.use_scaling = True
         self.winsorize_quantile_X = 0.01
+        self.winsorize_quantile_y = 0.005
 
 
     def execute(self, step_result: StepResult) -> StepResult:
@@ -53,8 +55,8 @@ class ScalingStep(PipelineStep):
                 df_val = split['y_val']
                 df_test = split['y_test']
 
-                lower_y = df_train.quantile(0.005)            
-                upper_y = df_train.quantile(0.995)
+                lower_y = df_train.quantile(self.winsorize_quantile_y)            
+                upper_y = df_train.quantile(1 - self.winsorize_quantile_y)
                 
                 df_train = df_train.clip(lower=lower_y, upper=upper_y, axis=1)
                 df_val = df_val.clip(lower=lower_y, upper=upper_y, axis=1)
@@ -75,35 +77,35 @@ class ScalingStep(PipelineStep):
                 split_data['X_val'].set_index('ticker', append=True, inplace=True)
                 split_data['X_test'].set_index('ticker', append=True, inplace=True)
                 
+            if self.use_scaling:
             
-           
-            x_scaler = self.get_scaler()
-            y_scaler = self.get_scaler()
-            
-            x_scaler.fit(split_data['X_train'])
-            y_scaler.fit(split_data['y_train'])
-            
-            # Extract column names before transforming
-            x_cols = split_data['X_train'].columns
-            y_cols = split_data['y_train'].columns
+                x_scaler = self.get_scaler()
+                y_scaler = self.get_scaler()
+                
+                x_scaler.fit(split_data['X_train'])
+                y_scaler.fit(split_data['y_train'])
+                
+                # Extract column names before transforming
+                x_cols = split_data['X_train'].columns
+                y_cols = split_data['y_train'].columns
 
-            x_train_raw = x_scaler.transform(split_data['X_train'])
-            x_val_raw = x_scaler.transform(split_data['X_val'])
-            x_test_raw = x_scaler.transform(split_data['X_test'])
-            y_train_raw = y_scaler.transform(split_data['y_train'])
-            y_val_raw = y_scaler.transform(split_data['y_val'])
-            y_test_raw = y_scaler.transform(split_data['y_test'])
-            
-            # Convert back to DataFrames with original Index and Column names
-            step_result.split_data[idx]['X_train'] = pd.DataFrame(x_train_raw, columns=x_cols, index=split_data['X_train'].index)
-            step_result.split_data[idx]['X_val'] = pd.DataFrame(x_val_raw, columns=x_cols, index=split_data['X_val'].index)
-            step_result.split_data[idx]['X_test'] = pd.DataFrame(x_test_raw, columns=x_cols, index=split_data['X_test'].index)
-            step_result.split_data[idx]['y_train'] = pd.DataFrame(y_train_raw, columns=y_cols, index=split_data['X_train'].index)
-            step_result.split_data[idx]['y_val'] = pd.DataFrame(y_val_raw, columns=y_cols, index=split_data['X_val'].index)
-            step_result.split_data[idx]['y_test'] = pd.DataFrame(y_test_raw, columns=y_cols, index=split_data['X_test'].index)
-            
-            step_result.split_data[idx]['x_scaler'] = x_scaler
-            step_result.split_data[idx]['y_scaler'] = y_scaler
+                x_train_raw = x_scaler.transform(split_data['X_train'])
+                x_val_raw = x_scaler.transform(split_data['X_val'])
+                x_test_raw = x_scaler.transform(split_data['X_test'])
+                y_train_raw = y_scaler.transform(split_data['y_train'])
+                y_val_raw = y_scaler.transform(split_data['y_val'])
+                y_test_raw = y_scaler.transform(split_data['y_test'])
+                
+                # Convert back to DataFrames with original Index and Column names
+                step_result.split_data[idx]['X_train'] = pd.DataFrame(x_train_raw, columns=x_cols, index=split_data['X_train'].index)
+                step_result.split_data[idx]['X_val'] = pd.DataFrame(x_val_raw, columns=x_cols, index=split_data['X_val'].index)
+                step_result.split_data[idx]['X_test'] = pd.DataFrame(x_test_raw, columns=x_cols, index=split_data['X_test'].index)
+                step_result.split_data[idx]['y_train'] = pd.DataFrame(y_train_raw, columns=y_cols, index=split_data['X_train'].index)
+                step_result.split_data[idx]['y_val'] = pd.DataFrame(y_val_raw, columns=y_cols, index=split_data['X_val'].index)
+                step_result.split_data[idx]['y_test'] = pd.DataFrame(y_test_raw, columns=y_cols, index=split_data['X_test'].index)
+                
+                step_result.split_data[idx]['x_scaler'] = x_scaler
+                step_result.split_data[idx]['y_scaler'] = y_scaler
             
         x_train_scaled = [split['X_train'] for split in step_result.split_data]
         

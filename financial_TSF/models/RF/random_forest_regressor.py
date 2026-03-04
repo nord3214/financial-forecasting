@@ -110,7 +110,7 @@ class RandomForestModel(BaseModel):
             "max_features":     ["sqrt", "log2", 0.3, 0.5, None],
         }
 
-        n_iter = 15  # number of combinations 
+        n_iter = 10  # number of combinations 
         rng = np.random.RandomState(1337)
 
         best_mse = float("inf")

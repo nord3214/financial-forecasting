@@ -43,8 +43,8 @@ class MLPModel(BaseModel):
         self.model.to(self.device) # move model to device (gpu)
         
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr, weight_decay=1e-5)
-        # loss_fn = nn.MSELoss() # think about HuberLoss/ l1 for robustness to outliers
-        loss_fn = nn.HuberLoss()
+        loss_fn = nn.MSELoss() # think about HuberLoss/ l1 for robustness to outliers
+        # loss_fn = nn.HuberLoss()
         
         # train with early stopping
         best_val_loss = float('inf')

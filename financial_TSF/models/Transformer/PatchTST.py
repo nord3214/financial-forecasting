@@ -409,10 +409,10 @@ def run_hyperparameter_tuning(pipeline_config: AppConfig, step_result: StepResul
         "patch_length": [4, 8, 16],
         "d_model": [32, 64, 128],
         "num_attention_heads": [2, 4, 8],
-        "num_hidden_layers": [1, 2, 3],
+        "num_hidden_layers": [2, 4, 8],
         "ffn_dim": [64, 128, 256],
         "batch_size": [32, 64, 128],
-        "lr": [1e-3, 5e-4, 1e-4],
+        "lr": [1e-4],
     }
 
     best_loss = float("inf")
@@ -432,7 +432,7 @@ def run_hyperparameter_tuning(pipeline_config: AppConfig, step_result: StepResul
             "batch_size": random.choice(param_grid["batch_size"]),
             "lr": random.choice(param_grid["lr"]),
             "num_epochs": 100,
-            "patience": 30,
+            "patience": 90,
         }
 
         print(f"Testing Config {i}: {model_config}")

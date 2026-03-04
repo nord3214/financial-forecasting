@@ -13,7 +13,7 @@ class TrainingStep(PipelineStep):
 
         model_instance: BaseModel = step_result.model_instance
         # :TODO check if tune hyperparameter methods exists in other than MLPModel
-        model_instance.tune_hyperparameters(step_result)
+        # model_instance.tune_hyperparameters(step_result)
         model_instance.fit(step_result)
         step_result.y_test, step_result.y_test_pred, step_result.y_train, step_result.y_train_pred = model_instance.predict(step_result)
             
