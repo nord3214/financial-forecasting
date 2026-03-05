@@ -1,5 +1,6 @@
 import copy
 import random
+import pandas as pd
 import torch
 from financial_TSF.data_models.config_data_model import AppConfig
 from financial_TSF.data_models.step_datamodel import StepResult
@@ -27,7 +28,7 @@ class MLPModel(BaseModel):
         print(f"Using device: {self.device} for training")
 
 
-    def fit(self, step_result: StepResult):
+    def fit(self, step_result: StepResult, refit: bool = True):
 
         train_dataloader  = create_dataloader(step_result.X_train, step_result.y_train, batch_size=self.batch_size, shuffle=True)
         # create separate val dataset
@@ -50,6 +51,7 @@ class MLPModel(BaseModel):
         best_val_loss = float('inf')
         best_model_wts = copy.deepcopy(self.model.state_dict())
         no_improve_epochs = 0
+        best_epoch = 1
         
         
         for epoch in range(50):  # number of epochs
@@ -104,6 +106,7 @@ class MLPModel(BaseModel):
                 best_val_loss = val_loss
                 best_model_wts = copy.deepcopy(self.model.state_dict())
                 no_improve_epochs = 0
+                best_epoch = epoch + 1
             else:
                 no_improve_epochs += 1
                 
@@ -140,7 +143,43 @@ class MLPModel(BaseModel):
         print('Training process has finished.')
         
         self.model.load_state_dict(best_model_wts)
-                
+
+        if refit:
+            # final refit on combined train+val
+            print(f"[MLP] Refitting on train+val combined for {best_epoch} epochs...")
+            X_combined = pd.concat([step_result.X_train, step_result.X_val])
+            y_combined = pd.concat([step_result.y_train, step_result.y_val])
+            combined_loader = create_dataloader(
+                X_combined, y_combined, batch_size=self.batch_size, shuffle=True
+            )
+
+            self.model = DynamicMLP(
+                input_dim=input_dim,
+                output_dim=self.output_dim,
+                hidden_layers=self.hidden_layers,
+                dropout_rate=self.dropout,
+            )
+            self.model.to(self.device)
+            optimizer_refit = torch.optim.Adam(
+                self.model.parameters(), lr=self.lr, weight_decay=1e-5
+            )
+
+            for ep in range(best_epoch):
+                self.model.train()
+                for data in combined_loader:
+                    inputs, targets = data
+                    inputs  = inputs.to(self.device).float()
+                    targets = targets.to(self.device).float()
+                    targets = targets.view(targets.shape[0], self.output_dim)
+                    optimizer_refit.zero_grad()
+                    outputs = self.model(inputs)
+                    loss = loss_fn(outputs, targets)
+                    loss.backward()
+                    optimizer_refit.step()
+                print(f"[MLP Refit] Epoch {ep + 1}/{best_epoch}")
+
+            self.model.eval()
+            print("[MLP] Refit complete.")
 
         return best_val_loss
     
@@ -202,7 +241,7 @@ class MLPModel(BaseModel):
             print(f"\n  [{i+1:>2}/{n_iter}] Config: {model_config}")
 
             candidate = MLPModel(self.config, model_config=model_config)
-            val_loss = candidate.fit(step_result)
+            val_loss = candidate.fit(step_result, refit=False)
             print(f"  [{i+1:>2}/{n_iter}] val_loss={val_loss:.6f}")
 
             if val_loss < best_loss:
