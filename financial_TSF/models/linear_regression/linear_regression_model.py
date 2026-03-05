@@ -2,6 +2,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.metrics import mean_squared_error
 import numpy as np
+import pandas as pd
 from financial_TSF.data_models.config_data_model import AppConfig
 from financial_TSF.data_models.step_datamodel import StepResult
 from financial_TSF.models.base_model import BaseModel
@@ -21,7 +22,11 @@ class LinearRegressionModel(BaseModel):
         self.y_train = step_result.y_train
         self.y_test = step_result.y_test
         
-        self.model.fit(step_result.X_train, step_result.y_train)
+        # final refit on combined train+val, including it gives the final model more data before test evaluation.
+        X_combined = pd.concat([step_result.X_train, step_result.X_val])
+        y_combined = pd.concat([step_result.y_train, step_result.y_val])
+        self.model.fit(X_combined, y_combined)
+        print("[Ridge] Fitted on combined train+val.")
 
     def predict(self, step_result: StepResult):
                 

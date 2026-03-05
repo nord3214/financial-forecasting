@@ -54,8 +54,12 @@ class RandomForestModel(BaseModel):
         
         self.estimator = rfr.set_params(**final_params)
             
-        rfr.fit(self.X_train, self.y_train)
+        # final refit on combined train+val, including it gives the final model more data before test evaluation.
+        X_combined = pd.concat([self.X_train, step_result.X_val])
+        y_combined = pd.concat([self.y_train, step_result.y_val])
+        rfr.fit(X_combined, y_combined)
         self.estimator = rfr
+        print("[RF] Fitted on combined train+val.")
         
         importances = pd.Series(rfr.feature_importances_, index=self.X_train.columns)
         
