@@ -147,7 +147,7 @@ class PatchTSTWrapper(BaseModel):
         self.num_epochs: int     = mc.get("num_epochs", 100)
         self.patience: int       = mc.get("patience", 10)
 
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device: torch.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model: PatchTSTForRegression | None = None
 
         print(f"[PatchTST] device={self.device}  context_length={self.context_length}  "
@@ -234,9 +234,34 @@ class PatchTSTWrapper(BaseModel):
         return _LazySlidingWindowDataset(
             segments, targets, self.context_length,
         )
+    def _make_combined_train_val_dataset(
+        self,
+        split_data: list[dict],
+    ) -> _LazySlidingWindowDataset:
+        """
+        Build a dataset combining train and validation rows for the final refit.
+        Each ticker's segment is the full chronological concatenation of X_train
+        and X_val, so look-back windows near the train/val boundary use real
+        X_train history instead of zero-padding.
+        """
+        segments: list[np.ndarray] = []
+        targets:  list[np.ndarray] = []
 
+        for split in split_data:
+            X_train = split["X_train"].values.astype(np.float32)
+            y_train = split["y_train"].values.astype(np.float32)
+            X_val   = split["X_val"].values.astype(np.float32)
+            y_val   = split["y_val"].values.astype(np.float32)
 
-    def fit(self, step_result: StepResult) -> Any:
+            segment = np.concatenate([X_train, X_val], axis=0)
+            target  = np.concatenate([y_train, y_val], axis=0)
+
+            segments.append(segment)
+            targets.append(target)
+
+        return _LazySlidingWindowDataset(segments, targets, self.context_length)
+
+    def fit(self, step_result: StepResult, refit: bool = True) -> Any:
         split_data = step_result.split_data
 
         # datasets
@@ -280,6 +305,7 @@ class PatchTSTWrapper(BaseModel):
         best_val_loss = float("inf")
         best_state = copy.deepcopy(self.model.state_dict())
         no_improve = 0
+        best_epoch = 1
 
         for epoch in range(1, self.num_epochs + 1):
             # --- train ---
@@ -320,6 +346,7 @@ class PatchTSTWrapper(BaseModel):
                 best_val_loss = avg_val
                 best_state = copy.deepcopy(self.model.state_dict())
                 no_improve = 0
+                best_epoch = epoch
             else:
                 no_improve += 1
 
@@ -329,6 +356,38 @@ class PatchTSTWrapper(BaseModel):
 
         self.model.load_state_dict(best_state)
         print(f"[PatchTST] Training complete. Best val loss: {best_val_loss:.6f}")
+
+        if refit:
+            # final refit on combined train+val
+            print(f"[PatchTST] Refitting on train+val combined for {best_epoch} epochs...")
+            combined_ds     = self._make_combined_train_val_dataset(split_data)
+            combined_loader = DataLoader(combined_ds, batch_size=self.batch_size, shuffle=True)
+
+            self.model = PatchTSTForRegression(patchtst_cfg)
+            self.model.to(self.device)
+            optimizer_refit = torch.optim.AdamW(
+                self.model.parameters(), lr=self.lr, weight_decay=1e-5,
+            )
+            loss_fn_refit = nn.HuberLoss()
+
+            for epoch in range(1, best_epoch + 1):
+                self.model.train()
+                epoch_loss = 0.0
+                for windows, targets in combined_loader:
+                    windows = windows.to(self.device)
+                    targets = targets.to(self.device)
+                    optimizer_refit.zero_grad()
+                    preds = self.model(past_values=windows).regression_outputs
+                    loss = loss_fn_refit(preds, targets)
+                    loss.backward()
+                    optimizer_refit.step()
+                    epoch_loss += loss.item()
+                print(f"[PatchTST Refit] Epoch {epoch:>3}/{best_epoch}  "
+                      f"loss={epoch_loss / len(combined_loader):.6f}")
+
+            self.model.eval()
+            print("[PatchTST] Refit complete.")
+
         return best_val_loss
 
 
@@ -365,7 +424,7 @@ class PatchTSTWrapper(BaseModel):
         x_key: str,
         prefix_key: str | None = None,
     ) -> np.ndarray:
-        """Run inference per ticker, concatenate results."""
+        """Run inference per ticker, concatenate results in the order of tickers in split data."""
         all_preds: list[np.ndarray] = []
 
         for split in split_data:
@@ -438,7 +497,7 @@ def run_hyperparameter_tuning(pipeline_config: AppConfig, step_result: StepResul
         print(f"Testing Config {i}: {model_config}")
 
         model = PatchTSTWrapper(pipeline_config, model_config=model_config)
-        final_val_loss = model.fit(step_result)
+        final_val_loss = model.fit(step_result, refit=False)
         print(f"Validation Loss for Config {i}: {final_val_loss}")
 
         if final_val_loss < best_loss:
