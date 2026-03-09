@@ -1,11 +1,13 @@
 import array
+from typing import Literal
 import numpy as np
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, root_mean_squared_error
 from financial_TSF.data_models.config_data_model import AppConfig
-from financial_TSF.data_models.step_datamodel import StepResult
+from financial_TSF.data_models.step_datamodel import SplitData, StepResult
 from financial_TSF.steps.base_step import PipelineStep
 import pandas as pd
 
+from financial_TSF.utils.economic_evaluation.efficient_frontier import PortfolioOptimizer
 from financial_TSF.utils.economic_evaluation.graph_visualization import GraphVisualization
 from financial_TSF.utils.economic_evaluation.top_k_simulator import TopKSimulator
 
@@ -19,6 +21,9 @@ class EvaluationStep(PipelineStep):
         
         step_result = self.map_predictions_to_tickers(step_result)
         step_result = self.unscale_predictions(step_result)
+        
+        efficient_frontier = PortfolioOptimizer(split_data=step_result.split_data, horizons=self.config.settings.forecast_horizon)
+        efficient_frontier.run()
         
         graph_visualization = GraphVisualization(config=self.config, step_result=step_result)
         graph_visualization.run()
@@ -69,27 +74,28 @@ class EvaluationStep(PipelineStep):
             Unscale predictions and true values to compute economic metrics on original scale.
             use scaler from split_data
         """
+        set_to_unscale = ["y_test_pred", "y_test", "y_train"] # for now only unscale these datasets
         
         for split in step_result.split_data:
             
             scaler = split['y_scaler']
             
-            split['y_test_pred'] = scaler.inverse_transform(split['y_test_pred'])
-            split['y_test_pred'] = pd.DataFrame(
-                split['y_test_pred'],
-                columns=split['y_test'].columns,
-                index=split['y_test'].index)
-            
-            split['y_test'] = scaler.inverse_transform(split['y_test'])
-            split['y_test'] = pd.DataFrame(
-                split['y_test'],
-                columns=split['y_test_pred'].columns,
-                index=split['y_test_pred'].index)
-            
-            
+            for dataset in set_to_unscale:
+                if split[dataset] is None:
+                    raise ValueError(f"{dataset} is None in split_data, cannot unscale.")
+                
+                columns = split[dataset].columns
+                index = split[dataset].index
+                
+          
+                split[dataset] = pd.DataFrame(
+                    scaler.inverse_transform(split[dataset]),
+                    columns=columns,
+                    index=index
+                )
+
             
             # for now set to None to not get confused of still scaled values
-            split['y_train'] = None
             split['y_val'] = None
             split['y_train_pred'] = None     
             
