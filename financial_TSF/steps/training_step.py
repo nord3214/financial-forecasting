@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import joblib
 
 from financial_TSF.data_models.config_data_model import AppConfig
@@ -21,7 +23,10 @@ class TrainingStep(PipelineStep):
             
         model_instance.fit(step_result)
         
-        # load already fitted model
+        # MLP load already fitted model
+        # model_instance.load_model((Path("resultsTraining/MLP/10_20_30/154530_10032026_MLP/saved_model/model.pt")))
+        
+        # RF load already fitted model
         # step_result.model_instance = joblib.load("results/LinearRegression/10/092641_09032026_LinearRegression/model.pkl")
         
         step_result.y_test, step_result.y_test_pred, step_result.y_train, step_result.y_train_pred = model_instance.predict(step_result)

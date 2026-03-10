@@ -172,6 +172,8 @@ class MLPModel(BaseModel):
         save_path = get_result_path(self.config, step_result)
             
         plot_learning_curve(train_losses, val_losses, model_name="MLP", save_path=save_path)
+        
+        self.save_model(step_result)
 
         return best_val_loss
     
@@ -250,6 +252,31 @@ class MLPModel(BaseModel):
         self.batch_size    = best_config["batch_size"]
 
         return {"best_config": best_config, "val_loss": best_loss}
+    
+    def save_model(self, step_result: StepResult) -> Path:
+        result_dir = get_result_path(self.config, step_result) / "saved_model"
+        result_dir.mkdir(parents=True, exist_ok=True)
+        # Save weights + the one missing architecture param
+        torch.save({
+            "state_dict": self.model.state_dict(),
+            "input_dim": self.model.network[0].in_features,  # extract from first Linear layer
+            # "input_dim": step_result.X_train.shape[1]
+        }, result_dir / "model.pt")
+        print(f"[MLP] Model saved to {result_dir}")
+        return result_dir
+
+    def load_model(self, path: Path) -> None:
+        checkpoint = torch.load(path, weights_only=True)
+        self.model = DynamicMLP(
+            input_dim=checkpoint["input_dim"],
+            output_dim=self.output_dim,       # already in self from __init__
+            hidden_layers=self.hidden_layers,  # already in self from __init__
+            dropout_rate=self.dropout,         # already in self from __init__
+        )
+        self.model.load_state_dict(checkpoint["state_dict"])
+        self.model.to(self.device)
+        self.model.eval()
+        print(f"[MLP] Model loaded from {path}")
 
 
 class DynamicMLP(nn.Module):
