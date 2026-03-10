@@ -26,7 +26,10 @@ class FeaturesConfig:
 @dataclass
 class PipelineConfig:
     steps: List[str]
-    
+    use_hyperparameter_tuning: bool
+    use_scaling: bool
+    use_winsorizing: bool
+
 @dataclass
 class ResultsConfig:
     results_path: str
@@ -66,6 +69,9 @@ class AppConfig:
 
             pipeline=PipelineConfig(
                 steps=list(payload["pipeline"]["steps"]),
+                use_hyperparameter_tuning=payload["pipeline"]["use_hyperparameter_tuning"],
+                use_scaling=payload["pipeline"]["use_scaling"],
+                use_winsorizing=payload["pipeline"]["use_winsorizing"],
             ),
             results=ResultsConfig(
                 results_path=payload["results"]["resultsPath"],

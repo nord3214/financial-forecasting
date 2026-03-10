@@ -9,8 +9,8 @@ from financial_TSF.visualization.feature_visualization import FeatureVisualizati
 class ScalingStep(PipelineStep):
     def __init__(self, config) -> None:
         self.config = config
-        self.use_winsorizing = True
-        self.use_scaling = True
+        self.use_winsorizing = config.pipeline.use_winsorizing
+        self.use_scaling = config.pipeline.use_scaling
         self.winsorize_quantile_X = 0.01
         self.winsorize_quantile_y = 0.005
 
@@ -30,6 +30,8 @@ class ScalingStep(PipelineStep):
         if self.use_winsorizing:
             
             for split in step_result.split_data:
+                
+                
                 # winsorizing for feature columns
                 df_train = split['X_train']
                 df_val = split['X_val']
@@ -108,17 +110,25 @@ class ScalingStep(PipelineStep):
                 step_result.split_data[idx]['y_scaler'] = y_scaler
             
         x_train_scaled = [split['X_train'] for split in step_result.split_data]
+        x_val_scaled = [split['X_val'] for split in step_result.split_data]
+        x_test_scaled = [split['X_test'] for split in step_result.split_data]
+
         
         # if self.use_winsorizing:
-        #     visualizer = FeatureVisualization(x_train_scaled, folder=f'/boxplots/robustscaled_winsorized_{self.winsorize_quantile_X*100}_percentiles')
+        #     visualizer = FeatureVisualization(x_train_scaled, folder=f'/boxplots/Test_Train_robustscaled_winsorized_{self.winsorize_quantile_X*100}_percentiles')
+        #     visualizer.run()
+        #     visualizer = FeatureVisualization(x_val_scaled, folder=f'/boxplots/Test_Val_robustscaled_winsorized_{self.winsorize_quantile_X*100}_percentiles')
         #     visualizer.run()
         # else:
         #     visualizer = FeatureVisualization(x_train_scaled, folder='/boxplots/robustscaled')
         #     visualizer.run()
         
-        # y_train_scaled = [split['y_train'] for split in step_result.split_data]
-        # visualizer = FeatureVisualization(y_train_scaled, folder='targets_scaled_robust_scaler_winsorized0_5percentiles')
-        # visualizer.run()
+        y_train_scaled = [split['y_train'] for split in step_result.split_data]
+        visualizer = FeatureVisualization(y_train_scaled, folder='targets_scaled_y_train')
+        visualizer.run()
+        y_train_scaled = [split['y_val'] for split in step_result.split_data]
+        visualizer = FeatureVisualization(y_train_scaled, folder='targets_scaled_y_val')
+        visualizer.run()
             
             
         # put all together for training step again :)

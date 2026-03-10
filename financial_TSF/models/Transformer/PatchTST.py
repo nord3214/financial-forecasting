@@ -9,25 +9,29 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
 from transformers import PatchTSTConfig, PatchTSTForRegression
 
+
 from financial_TSF.data_models.config_data_model import AppConfig
 from financial_TSF.data_models.step_datamodel import StepResult
 from financial_TSF.models.base_model import BaseModel
+from financial_TSF.utils.utils import get_result_path, print_target_diagnostics, print_prediction_diagnostics, plot_learning_curve, save_param_dict
 
 # default hyper-parameters 
 
 PATCHTST_PARAMS: dict[str, Any] = {
     "context_length": 128,       # lookback window intervals
     "patch_length": 4,          # length of each patch
-    "d_model": 64,              # transformer hidden dimension
+    "patch_stride": 2,          # stride between patches (2 = overlapping, 4 = non-overlapping)
+    "d_model": 32,              # transformer hidden dimension
     "num_attention_heads": 4,
     "num_hidden_layers": 2,
-    "ffn_dim": 128,
-    "dropout": 0.2,
-    "head_dropout": 0.2,
+    "ffn_dim": 64,
+    "dropout": 0.4,
+    "head_dropout": 0.3,
+    "weight_decay": 1e-3,       # L2 regularization
     "batch_size": 64,
     "lr": 1e-4,
-    "num_epochs": 100,
-    "patience": 30,             # early-stopping patience (epochs)
+    "num_epochs": 30,
+    "patience": 15,             # early-stopping patience (epochs)
 }
 
 
@@ -131,28 +135,33 @@ class PatchTSTWrapper(BaseModel):
         self.config = config
         mc = model_config or PATCHTST_PARAMS
 
+        
         self.num_targets: int = len(config.settings.forecast_horizon)
 
         # hyper-parameters
         self.context_length: int = mc.get("context_length", 32)
         self.patch_length: int   = mc.get("patch_length", 8)
-        self.d_model: int        = mc.get("d_model", 64)
+        self.patch_stride: int   = mc.get("patch_stride", 2)
+        self.d_model: int        = mc.get("d_model", 32)
         self.num_heads: int      = mc.get("num_attention_heads", 4)
         self.num_layers: int     = mc.get("num_hidden_layers", 2)
-        self.ffn_dim: int        = mc.get("ffn_dim", 128)
-        self.dropout: float      = mc.get("dropout", 0.2)
-        self.head_dropout: float = mc.get("head_dropout", 0.2)
+        self.ffn_dim: int        = mc.get("ffn_dim", 64)
+        self.dropout: float      = mc.get("dropout", 0.4)
+        self.head_dropout: float = mc.get("head_dropout", 0.3)
+        self.weight_decay: float = mc.get("weight_decay", 1e-3)
         self.batch_size: int     = mc.get("batch_size", 64)
         self.lr: float           = mc.get("lr", 1e-4)
         self.num_epochs: int     = mc.get("num_epochs", 100)
         self.patience: int       = mc.get("patience", 10)
+        
+        self.mc = mc
 
         self.device: torch.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model: PatchTSTForRegression | None = None
 
         print(f"[PatchTST] device={self.device}  context_length={self.context_length}  "
               f"patch_length={self.patch_length}  num_targets={self.num_targets}")
-
+        
 
     @staticmethod
     def _build_windows(X: np.ndarray, context_size: int) -> np.ndarray:
@@ -272,6 +281,9 @@ class PatchTSTWrapper(BaseModel):
         train_loader = DataLoader(train_ds, batch_size=self.batch_size, shuffle=True)
         val_loader   = DataLoader(val_ds,   batch_size=self.batch_size, shuffle=False)
 
+        # --- target distribution diagnostics ---
+        print_target_diagnostics(step_result.y_train)
+
         # model initialisation
         num_features = split_data[0]["X_train"].shape[1]
 
@@ -279,7 +291,7 @@ class PatchTSTWrapper(BaseModel):
             num_input_channels=num_features,
             context_length=self.context_length,
             patch_length=self.patch_length,
-            patch_stride=4,          # non-overlapping
+            patch_stride=self.patch_stride,
             prediction_length=self.num_targets,
             d_model=self.d_model,
             num_attention_heads=self.num_heads,
@@ -294,18 +306,24 @@ class PatchTSTWrapper(BaseModel):
         )
         self.model = PatchTSTForRegression(patchtst_cfg)
         self.model.to(self.device)
+        
+        # param_dict is all class attributs self.mc only the init
+        param_dict: dict[str, Any] = patchtst_cfg.__dict__
+        save_param_dict(self.mc, self.config, step_result)
 
         # ── optimiser & loss ────────────────────────────────────────────
         optimizer = torch.optim.AdamW(
-            self.model.parameters(), lr=self.lr, weight_decay=1e-5,
+            self.model.parameters(), lr=self.lr, weight_decay=self.weight_decay,
         )
-        loss_fn = nn.HuberLoss()
+        loss_fn = nn.L1Loss()
 
         # ── training loop with early stopping ───────────────────────────
         best_val_loss = float("inf")
         best_state = copy.deepcopy(self.model.state_dict())
         no_improve = 0
         best_epoch = 1
+        train_losses = []
+        val_losses = []
 
         for epoch in range(1, self.num_epochs + 1):
             # --- train ---
@@ -340,6 +358,8 @@ class PatchTSTWrapper(BaseModel):
                 f"[PatchTST] Epoch {epoch:>3}/{self.num_epochs}  "
                 f"train_loss={avg_train:.6f}  val_loss={avg_val:.6f}"
             )
+            train_losses.append(avg_train)
+            val_losses.append(avg_val)
 
             # early stopping bookkeeping
             if avg_val < best_val_loss:
@@ -354,8 +374,16 @@ class PatchTSTWrapper(BaseModel):
                 print(f"[PatchTST] Early stopping at epoch {epoch}")
                 break
 
+            print_prediction_diagnostics(
+                self.model, val_loader, train_loader, self.device, epoch,
+                forward_fn=lambda m, x: m(past_values=x).regression_outputs
+            )
+
         self.model.load_state_dict(best_state)
         print(f"[PatchTST] Training complete. Best val loss: {best_val_loss:.6f}")
+
+        save_path = get_result_path(self.config, step_result)
+        plot_learning_curve(train_losses, val_losses, model_name="PatchTST", save_path=save_path)
 
         if refit:
             # final refit on combined train+val

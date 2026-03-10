@@ -1,4 +1,5 @@
 import copy
+from pathlib import Path
 import random
 import pandas as pd
 import torch
@@ -9,7 +10,10 @@ from financial_TSF.models.base_model import BaseModel
 from financial_TSF.steps.batching_step import create_dataloader
 from torch import nn
 
+from financial_TSF.utils.utils import get_result_path, print_target_diagnostics, print_prediction_diagnostics, plot_learning_curve
+
 # inspired from https://github.com/christianversloot/machine-learning-articles/blob/main/how-to-create-a-neural-network-for-regression-with-pytorch.md
+
 
 
 
@@ -22,17 +26,22 @@ class MLPModel(BaseModel):
         self.dropout = model_config.get("dropout", 0.2)
         self.lr = model_config.get("lr", 0.001)
         self.batch_size = model_config.get("batch_size", 64)
-        self.patience = model_config.get("patience", 20) # for early stopping
+        self.patience = model_config.get("patience", 30) # for early stopping
         
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f"Using device: {self.device} for training")
 
 
     def fit(self, step_result: StepResult, refit: bool = True):
+        
+        train_losses = []
+        val_losses = []
 
         train_dataloader  = create_dataloader(step_result.X_train, step_result.y_train, batch_size=self.batch_size, shuffle=True)
         # create separate val dataset
         val_loader  = create_dataloader(step_result.X_val, step_result.y_val, batch_size=self.batch_size, shuffle=False)
+
+        print_target_diagnostics(step_result.y_train)
 
         # initialize model
         input_dim = step_result.X_train.shape[1]
@@ -43,8 +52,9 @@ class MLPModel(BaseModel):
             dropout_rate=self.dropout)
         self.model.to(self.device) # move model to device (gpu)
         
-        optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr, weight_decay=1e-5)
-        loss_fn = nn.MSELoss() # think about HuberLoss/ l1 for robustness to outliers
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr, weight_decay=1e-4)
+        # loss_fn = nn.MSELoss()
+        loss_fn = nn.L1Loss() # MAE - more robust to outliers in financial returns
         # loss_fn = nn.HuberLoss()
         
         # train with early stopping
@@ -54,11 +64,11 @@ class MLPModel(BaseModel):
         best_epoch = 1
         
         
-        for epoch in range(50):  # number of epochs
+        for epoch in range(1000):  # number of epochs
             print(f'Starting epoch {epoch+1}')
             
             self.model.train()
-            current_loss = 0.0
+            train_loss = 0.0
 
             # get batched data from dataloader
             for i, data in enumerate(train_dataloader):
@@ -80,12 +90,11 @@ class MLPModel(BaseModel):
 
                 optimizer.step()
 
-                # print statistics
-                # accumulate loss over batches
-                current_loss += loss.item()
-                if (i+1) % 500 == 0:
-                    print(f'Batch {i+1}, Loss: {current_loss / 500}')
-                    current_loss = 0.0
+                train_loss += loss.item()
+
+            train_loss /= len(train_dataloader)
+            train_losses.append(train_loss)
+            print(f'Epoch {epoch+1} Train Loss: {train_loss:.6f}')
                     
             # Validation Step
             self.model.eval()
@@ -100,6 +109,8 @@ class MLPModel(BaseModel):
                     val_loss += loss.item()
             
             val_loss /= len(val_loader)
+            val_losses.append(val_loss)
+            print(f'Epoch {epoch+1} completed. Validation Loss: {val_loss:.6f}')
             
             # Check Early Stopping
             if val_loss < best_val_loss:
@@ -114,36 +125,14 @@ class MLPModel(BaseModel):
                 print(f"Early Stopping at Epoch {epoch+1}")
                 break
             
-            # check for mean predictor
-            self.model.eval()
-            all_preds = []
-            all_targets = []
-
-            with torch.no_grad():
-                for inputs, targets in val_loader:
-                    inputs = inputs.to(self.device).float()
-                    outputs = self.model(inputs)
-                    all_preds.append(outputs.cpu())
-                    all_targets.append(targets.cpu())
-
-            # concat all predictions and targets
-            all_preds = torch.cat(all_preds)
-            all_targets = torch.cat(all_targets)
-
-            # calculate std and mean
-            std_pred = all_preds.std().item()
-            std_target = all_targets.std().item()
-            mean_pred = all_preds.mean().item()
-
-            print(f"--- diagnosis for {epoch+1} ---")
-            print(f"Target Std:    {std_target:.4f}")
-            print(f"Prediction Std: {std_pred:.4f}")
-            print(f"Prediction Mean: {mean_pred:.4f}")
+            print_prediction_diagnostics(self.model, val_loader, train_dataloader, self.device, epoch + 1)
 
         print('Training process has finished.')
+        self.train_losses = train_losses
+        self.val_losses = val_losses
         
         self.model.load_state_dict(best_model_wts)
-
+        refit = False
         if refit:
             # final refit on combined train+val
             print(f"[MLP] Refitting on train+val combined for {best_epoch} epochs...")
@@ -180,6 +169,9 @@ class MLPModel(BaseModel):
 
             self.model.eval()
             print("[MLP] Refit complete.")
+        save_path = get_result_path(self.config, step_result)
+            
+        plot_learning_curve(train_losses, val_losses, model_name="MLP", save_path=save_path)
 
         return best_val_loss
     
@@ -235,7 +227,7 @@ class MLPModel(BaseModel):
                 "dropout":       random.choice(param_grid["dropout"]),
                 "lr":            random.choice(param_grid["lr"]),
                 "batch_size":    random.choice(param_grid["batch_size"]),
-                "patience":      20,
+                "patience":      30,
             }
 
             print(f"\n  [{i+1:>2}/{n_iter}] Config: {model_config}")

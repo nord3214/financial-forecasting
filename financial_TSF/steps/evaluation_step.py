@@ -22,8 +22,8 @@ class EvaluationStep(PipelineStep):
         step_result = self.map_predictions_to_tickers(step_result)
         step_result = self.unscale_predictions(step_result)
         
-        efficient_frontier = PortfolioOptimizer(split_data=step_result.split_data, horizons=self.config.settings.forecast_horizon)
-        efficient_frontier.run()
+        # efficient_frontier = PortfolioOptimizer(split_data=step_result.split_data, horizons=self.config.settings.forecast_horizon)
+        # efficient_frontier.run()
         
         graph_visualization = GraphVisualization(config=self.config, step_result=step_result)
         graph_visualization.run()
@@ -87,12 +87,16 @@ class EvaluationStep(PipelineStep):
                 columns = split[dataset].columns
                 index = split[dataset].index
                 
-          
-                split[dataset] = pd.DataFrame(
-                    scaler.inverse_transform(split[dataset]),
-                    columns=columns,
-                    index=index
-                )
+                if self.config.pipeline.use_scaling:
+                    split[dataset] = pd.DataFrame(
+                        scaler.inverse_transform(split[dataset]),
+                        columns=columns,
+                        index=index
+                    )
+                else:
+                    # no need for unscaling
+                    continue
+                    
 
             
             # for now set to None to not get confused of still scaled values
@@ -134,13 +138,13 @@ class EvaluationStep(PipelineStep):
             
             # ------------------------- economic evaluation -------------------------
         
-            sim = TopKSimulator(step_result.split_data, transaction_cost_bps=
+            # sim = TopKSimulator(step_result.split_data, transaction_cost_bps=
                                 
                                 
-                                1.0)
-            sim.prepare_data(horizon_col=f"target_{self.config.settings.forecast_horizon[i]}")
+            #                     1.0)
+            # sim.prepare_data(horizon_col=f"target_{self.config.settings.forecast_horizon[i]}")
             
-            sim.run_simulation(k=5)
+            # sim.run_simulation(k=5)
 
             # sim.plot_equity_curve()
             
@@ -150,10 +154,10 @@ class EvaluationStep(PipelineStep):
                 "MSE": mean_squared_error(y_true_horizon, y_pred_horizon),
                 "RMSE": root_mean_squared_error(y_true_horizon, y_pred_horizon),
                 "R2": r2_score(y_true_horizon, y_pred_horizon),
-                "Hit_Rate": float(sim.hit_rate),
-                "Sharpe_Ratio": float(sim.annualized_sharpe),
-                "Percentage_Return": float(sim.percentage_return),
-                "Number_of_Trades": int(sim.no_of_entries)
+                # "Hit_Rate": float(sim.hit_rate),
+                # "Sharpe_Ratio": float(sim.annualized_sharpe),
+                # "Percentage_Return": float(sim.percentage_return),
+                # "Number_of_Trades": int(sim.no_of_entries)
             }
             
         metrics["Global"] = {
