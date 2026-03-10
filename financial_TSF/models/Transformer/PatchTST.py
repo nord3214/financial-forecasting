@@ -1,4 +1,5 @@
 import copy
+from pathlib import Path
 import random
 from typing import Any
 
@@ -487,6 +488,19 @@ class PatchTSTWrapper(BaseModel):
         best_config = run_hyperparameter_tuning(self.config, step_result)
 
         return best_config
+    
+    def save_model(self, step_result: StepResult) -> Path:
+        result_dir = get_result_path(self.config, step_result) / "saved_model"
+        result_dir.mkdir(parents=True, exist_ok=True)
+        self.model.save_pretrained(result_dir)
+        print(f"[PatchTST] Model saved to {result_dir}")
+        return result_dir
+
+    def load_model(self, model_path: Path) -> None:
+        self.model = PatchTSTForRegression.from_pretrained(model_path)
+        self.model.to(self.device)
+        self.model.eval()
+        print(f"[PatchTST] Model loaded from {model_path}")
 
 
 def run_hyperparameter_tuning(pipeline_config: AppConfig, step_result: StepResult) -> dict:

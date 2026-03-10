@@ -178,14 +178,14 @@ class RandomForestModel(BaseModel):
         if self.estimator is None:
             raise RuntimeError("No fitted estimator to save. Call fit() first.")
 
-        result_dir = get_result_path(self.config, step_result)
+        result_dir = get_result_path(self.config, step_result) / "saved_model"
         result_dir.mkdir(parents=True, exist_ok=True)
         model_path = result_dir / "random_forest_model.joblib"
         joblib.dump(self.estimator, model_path, compress=3)
         print(f"[RF] Model saved to {model_path}")
         return model_path
 
-    def load_model(self, path: Path) -> None:
+    def load_model(self, model_path: Path) -> None:
         """Load a previously saved estimator."""
-        self.estimator = joblib.load(path)
-        print(f"[RF] Model loaded from {path}")
+        self.estimator = joblib.load(model_path)
+        print(f"[RF] Model loaded from {model_path}")

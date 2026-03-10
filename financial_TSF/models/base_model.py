@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Any
 from financial_TSF.data_models.step_datamodel import StepResult
 
@@ -27,3 +28,12 @@ class BaseModel(ABC):
             A dictionary containing the best hyperparameters found.
         """
         pass
+    
+    def save_model(self, step_result: StepResult) -> Any:
+        """Optional method to save the trained model to disk."""
+        raise NotImplementedError("save_model method not implemented for this model.")
+    
+    def load_model(self, model_path: Path) -> Any:
+        """Optional method to load a pre-trained model from disk."""
+        raise NotImplementedError("load_model method not implemented for this model.")
+        
