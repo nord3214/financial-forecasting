@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 from typing import Any, Optional
+import joblib
 import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_squared_error
@@ -34,12 +35,12 @@ class RandomForestModel(BaseModel):
         
     def fit(self, step_result: StepResult):
         
-        self.X_train = step_result.X_train
-        self.X_test = step_result.X_test
-        self.y_train = step_result.y_train
-        self.y_test = step_result.y_test
+        # self.X_train = step_result.X_train
+        # self.X_test = step_result.X_test
+        # self.y_train = step_result.y_train
+        # self.y_test = step_result.y_test
         
-        if self.X_train is None or self.y_train is None:
+        if step_result.X_train is None or step_result.y_train is None:
             raise RuntimeError("Data splits are not prepared. Call prepare_data() or Datasplit Pipeline step first.")
         
         from sklearn.ensemble import RandomForestRegressor
@@ -55,27 +56,34 @@ class RandomForestModel(BaseModel):
         self.estimator = rfr.set_params(**final_params)
             
         # final refit on combined train+val, including it gives the final model more data before test evaluation.
-        X_combined = pd.concat([self.X_train, step_result.X_val])
-        y_combined = pd.concat([self.y_train, step_result.y_val])
+        X_combined = pd.concat([step_result.X_train, step_result.X_val])
+        y_combined = pd.concat([step_result.y_train, step_result.y_val])
         rfr.fit(X_combined, y_combined)
         self.estimator = rfr
         print("[RF] Fitted on combined train+val.")
         
-        importances = pd.Series(rfr.feature_importances_, index=self.X_train.columns)
+        importances = pd.Series(rfr.feature_importances_, index=step_result.X_train.columns)
         
         importances = importances.sort_values(ascending=False)
         print("Feature importances:\n", importances)
+        
+        
+        self.save_model(step_result)
             
             
         
     def predict(self, step_result: StepResult) -> tuple[pd.Series, pd.Series, pd.Series, pd.Series]:
+        # load already fitted model
+        # if self.estimator is None:
+        #     self.load_model(Path("resultsTraining/RF/10_20_30/145324_10032026_RF/random_forest_model.joblib"))
+
         if self.estimator is None:
             raise RuntimeError("Estimator is not fitted. Call fit() first.")
-        if self.X_test is None or self.X_train is None or self.y_test is None or self.y_train is None:
+        if step_result.X_test is None or step_result.X_train is None or step_result.y_test is None or step_result.y_train is None:
             raise RuntimeError("Data splits are not prepared. Call prepare_data()/fit() first.")
 
-        y_test_pred = self.estimator.predict(self.X_test)
-        y_train_pred = self.estimator.predict(self.X_train)
+        y_test_pred = self.estimator.predict(step_result.X_test)
+        y_train_pred = self.estimator.predict(step_result.X_train)
         
         # calculate mean and variance only distribution of epistemic uncertainty
         
@@ -88,7 +96,7 @@ class RandomForestModel(BaseModel):
 
 
 
-        return self.y_test, y_test_pred, self.y_train, y_train_pred
+        return step_result.y_test, y_test_pred, step_result.y_train, y_train_pred
 
     def tune_hyperparameters(self, step_result: StepResult) -> dict:
         """
@@ -164,3 +172,20 @@ class RandomForestModel(BaseModel):
         HYPERPARAMS.update(best_params)
 
         return {"best_params": best_params, "val_mse": best_mse}
+    
+    def save_model(self, step_result: StepResult) -> Path:
+        """Persist the fitted estimator to disk."""
+        if self.estimator is None:
+            raise RuntimeError("No fitted estimator to save. Call fit() first.")
+
+        result_dir = get_result_path(self.config, step_result)
+        result_dir.mkdir(parents=True, exist_ok=True)
+        model_path = result_dir / "random_forest_model.joblib"
+        joblib.dump(self.estimator, model_path, compress=3)
+        print(f"[RF] Model saved to {model_path}")
+        return model_path
+
+    def load_model(self, path: Path) -> None:
+        """Load a previously saved estimator."""
+        self.estimator = joblib.load(path)
+        print(f"[RF] Model loaded from {path}")
