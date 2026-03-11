@@ -11,13 +11,13 @@ from financial_TSF.data_models.step_datamodel import StepResult
 
 
 
-def plot_learning_curve(train_losses, val_losses, model_name="Modell", save_path: Path | None = None) -> None:
-    epochs = range(1, len(train_losses) + 1)
+def plot_learning_curve(train_losses, val_losses, model_name="Modell", save_path: Path | None = None, xlabel: str = "Epochs", x_values=None) -> None:
+    x = x_values if x_values is not None else range(1, len(train_losses) + 1)
     plt.figure(figsize=(10, 6), dpi=100)
-    plt.plot(epochs, train_losses, 'b-', label='Training Loss', linewidth=2)
-    plt.plot(epochs, val_losses, 'r-', label='Validation Loss', linewidth=2)
+    plt.plot(x, train_losses, 'b-', label='Training Loss', linewidth=2)
+    plt.plot(x, val_losses, 'r-', label='Validation Loss', linewidth=2)
     plt.title(f'Learning Curves: {model_name}', fontsize=14, fontweight='bold')
-    plt.xlabel('Epochs', fontsize=12)
+    plt.xlabel(xlabel, fontsize=12)
     plt.ylabel('Loss MAE', fontsize=12)
     plt.legend(loc='upper right', fontsize=11)
     plt.grid(True, linestyle='--', alpha=0.7)

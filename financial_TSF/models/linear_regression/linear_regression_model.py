@@ -17,10 +17,6 @@ class LinearRegressionModel(BaseModel):
 
     def fit(self, step_result: StepResult):
         
-        self.X_train = step_result.X_train
-        self.X_test = step_result.X_test
-        self.y_train = step_result.y_train
-        self.y_test = step_result.y_test
         
         # final refit on combined train+val, including it gives the final model more data before test evaluation.
         X_combined = pd.concat([step_result.X_train, step_result.X_val])
@@ -30,11 +26,11 @@ class LinearRegressionModel(BaseModel):
 
     def predict(self, step_result: StepResult):
                 
-        y_test_pred = self.model.predict(self.X_test)
-        y_train_pred = self.model.predict(self.X_train)
+        y_test_pred = self.model.predict(step_result.X_test)
+        y_train_pred = self.model.predict(step_result.X_train)
 
         
-        return self.y_test, y_test_pred, self.y_train, y_train_pred
+        return step_result.y_test, y_test_pred, step_result.y_train, y_train_pred
 
     def tune_hyperparameters(self, step_result: StepResult) -> dict:
         """

@@ -4,20 +4,20 @@ from typing import Any, Optional
 import joblib
 import numpy as np
 import pandas as pd
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 from financial_TSF.data_models.config_data_model import AppConfig
 from financial_TSF.data_models.step_datamodel import StepResult
 from financial_TSF.models.base_model import BaseModel
 from scipy.stats import randint
 
-from financial_TSF.utils.utils import get_result_path
+from financial_TSF.utils.utils import get_result_path, save_param_dict, print_target_diagnostics, plot_learning_curve
 
 
 
 HYPERPARAMS: dict[str, Any] = {
     "n_estimators": 300,
     "random_state": 17,
-    "n_jobs": -2,
+    "n_jobs": -1,          # n_jobs=-1 copies X_train per worker on Windows (spawn) → OOM; keep 1
     "max_features": "sqrt",
     "min_samples_leaf": 40,
     "max_depth": 15,
@@ -42,32 +42,56 @@ class RandomForestModel(BaseModel):
         
         if step_result.X_train is None or step_result.y_train is None:
             raise RuntimeError("Data splits are not prepared. Call prepare_data() or Datasplit Pipeline step first.")
-        
+
+        print_target_diagnostics(step_result.y_train)
+
         from sklearn.ensemble import RandomForestRegressor
-        rfr = RandomForestRegressor(
-            n_jobs= -2,
-            random_state=1337,
-            criterion="squared_error"
+
+        # fit on train only with oob_score — oob_prediction_ is a free generalisation estimate
+        rfr = RandomForestRegressor(criterion="squared_error", oob_score=True)
+        rfr.set_params(**HYPERPARAMS)
+
+        # --- n_estimators learning curve (warm_start = one growing forest, no extra RAM) ---
+        n_total = HYPERPARAMS.get("n_estimators", 300)
+        n_steps = 10
+        step_size = max(1, n_total // n_steps)
+        checkpoints = list(range(step_size, n_total + 1, step_size))
+        if checkpoints[-1] != n_total:
+            checkpoints.append(n_total)
+
+        rfr.set_params(warm_start=True)
+        train_maes, val_maes = [], []
+        for n in checkpoints:
+            rfr.set_params(n_estimators=n)
+            rfr.fit(step_result.X_train, step_result.y_train)
+            train_maes.append(mean_absolute_error(step_result.y_train, rfr.predict(step_result.X_train)))
+            val_maes.append(mean_absolute_error(step_result.y_val,     rfr.predict(step_result.X_val)))
+            print(f"[RF] n_trees={n:>4}  train MAE={train_maes[-1]:.6f}  val MAE={val_maes[-1]:.6f}")
+        rfr.set_params(warm_start=False)
+
+        save_path = get_result_path(self.config, step_result)
+        plot_learning_curve(
+            train_maes, val_maes,
+            model_name="RF",
+            save_path=save_path,
+            xlabel="Number of Trees",
+            x_values=checkpoints,
         )
-        
-        # use hyperparameters
-        final_params = HYPERPARAMS
-        
-        self.estimator = rfr.set_params(**final_params)
-            
-        # final refit on combined train+val, including it gives the final model more data before test evaluation.
-        X_combined = pd.concat([step_result.X_train, step_result.X_val])
-        y_combined = pd.concat([step_result.y_train, step_result.y_val])
-        rfr.fit(X_combined, y_combined)
+        # --- final diagnostics at full n_estimators ---
         self.estimator = rfr
-        print("[RF] Fitted on combined train+val.")
-        
+        print("[RF] Fitted on X_train.")
+        oob_mae = mean_absolute_error(step_result.y_train, rfr.oob_prediction_)
+        print(f"[RF] train MAE: {train_maes[-1]:.6f} | val MAE: {val_maes[-1]:.6f} | OOB MAE: {oob_mae:.6f}")
+
+        save_param_dict(
+            {**HYPERPARAMS, "train_mae": train_maes[-1], "val_mae": val_maes[-1], "oob_mae": oob_mae},
+            self.config, step_result,
+        )
+
         importances = pd.Series(rfr.feature_importances_, index=step_result.X_train.columns)
-        
         importances = importances.sort_values(ascending=False)
         print("Feature importances:\n", importances)
-        
-        
+
         self.save_model(step_result)
             
             

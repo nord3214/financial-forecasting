@@ -88,6 +88,13 @@ class MLPModel(BaseModel):
 
                 loss.backward()
 
+                # gradient diagnostics
+                if i == 0 and (epoch + 1) % 5 == 0:
+                    for name, param in self.model.named_parameters():
+                        if param.grad is not None:
+                            grad_norm = param.grad.norm().item()
+                            print(f"[Grad] {name:40s}  norm={grad_norm:.2e}")
+
                 optimizer.step()
 
                 train_loss += loss.item()
