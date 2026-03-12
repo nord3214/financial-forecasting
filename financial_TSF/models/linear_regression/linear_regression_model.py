@@ -1,6 +1,7 @@
-from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LinearRegression, Ridge
-from sklearn.metrics import mean_squared_error
+from pathlib import Path
+
+from sklearn.linear_model import Ridge
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 import numpy as np
 import pandas as pd
 from financial_TSF.data_models.config_data_model import AppConfig
@@ -13,16 +14,15 @@ from financial_TSF.models.base_model import BaseModel
 class LinearRegressionModel(BaseModel):
     def __init__(self, config: AppConfig):
         self.model = Ridge(alpha=1.0)
-        self.scaler = StandardScaler()
 
     def fit(self, step_result: StepResult):
-        
-        
-        # final refit on combined train+val, including it gives the final model more data before test evaluation.
-        X_combined = pd.concat([step_result.X_train, step_result.X_val])
-        y_combined = pd.concat([step_result.y_train, step_result.y_val])
-        self.model.fit(X_combined, y_combined)
-        print("[Ridge] Fitted on combined train+val.")
+        # fit on X_train only — avoids duplicating data in RAM
+        self.model.fit(step_result.X_train, step_result.y_train)
+        print("[Ridge] Fitted on X_train.")
+
+        train_mae = mean_absolute_error(step_result.y_train, self.model.predict(step_result.X_train))
+        val_mae   = mean_absolute_error(step_result.y_val,   self.model.predict(step_result.X_val))
+        print(f"[Ridge] train MAE: {train_mae:.6f} | val MAE: {val_mae:.6f}")
 
     def predict(self, step_result: StepResult):
                 
@@ -72,3 +72,11 @@ class LinearRegressionModel(BaseModel):
         print(f"[Ridge] Model updated with alpha={best_alpha:.6f}")
 
         return {"alpha": best_alpha, "val_mse": best_mse}
+    
+    def save_model(self,step_result: StepResult) -> None:
+        print("[Ridge] No save_model implementation, skipping.")
+        pass
+    
+    def load_model(self, model_path: Path) -> None:
+        print("[Ridge] No load_model implementation, skipping.")
+        pass
