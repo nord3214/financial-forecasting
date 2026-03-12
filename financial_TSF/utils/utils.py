@@ -91,4 +91,47 @@ def save_param_dict(params: dict, config: AppConfig, step_result: StepResult) ->
     with open(param_file, "w") as f:
         for key, value in params.items():
             f.write(f"{key}: {value}\n")
+
+
+def save_tuning_results(
+    all_trials: list[dict],
+    final_params: dict,
+    model_name: str,
+    config: AppConfig,
+    step_result: StepResult,
+) -> None:
+    """Save hyperparameter tuning results to a structured JSON file.
+
+    Parameters
+    ----------
+    all_trials : list[dict]
+        Each entry must contain "params" (dict) and "val_loss" (float).
+    final_params : dict
+        The hyperparameter set actually passed to the final fit() call.
+    model_name : str
+        e.g. "MLP", "RF", "PatchTST"
+    config, step_result : used to resolve the output directory.
+    """
+    import json
+
+    sorted_trials = sorted(all_trials, key=lambda x: x["val_loss"])
+    best_val_loss = sorted_trials[0]["val_loss"] if sorted_trials else None
+
+    output = {
+        "model": model_name,
+        "n_trials": len(all_trials),
+        "best_val_loss": best_val_loss,
+        "final_params": final_params,
+        "all_trials_sorted_by_val_loss": [
+            {"rank": rank + 1, "val_loss": t["val_loss"], "params": t["params"]}
+            for rank, t in enumerate(sorted_trials)
+        ],
+    }
+
+    save_path = get_result_path(config, step_result) / "hyperparameter_tuning"
+    save_path.mkdir(parents=True, exist_ok=True)
+    out_file = save_path / "tuning_results.json"
+    with open(out_file, "w") as f:
+        json.dump(output, f, indent=4, default=str)
+    print(f"[{model_name}] Tuning results saved to {out_file}")
     

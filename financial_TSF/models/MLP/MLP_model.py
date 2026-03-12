@@ -10,7 +10,7 @@ from financial_TSF.models.base_model import BaseModel
 from financial_TSF.steps.batching_step import create_dataloader
 from torch import nn
 
-from financial_TSF.utils.utils import get_result_path, print_target_diagnostics, print_prediction_diagnostics, plot_learning_curve
+from financial_TSF.utils.utils import get_result_path, print_target_diagnostics, print_prediction_diagnostics, plot_learning_curve, save_tuning_results
 
 # inspired from https://github.com/christianversloot/machine-learning-articles/blob/main/how-to-create-a-neural-network-for-regression-with-pytorch.md
 
@@ -223,12 +223,13 @@ class MLPModel(BaseModel):
                               [128, 64, 32], [512, 256, 128], [128, 128]],
             "dropout": [0.1, 0.2, 0.3, 0.5],
             "lr": [1e-3, 5e-4, 1e-4],
-            "batch_size": [64, 128, 512, 1024],
+            "batch_size": [64, 128, 256, 512,],
         }
 
-        n_iter = 15
+        n_iter = 10
         best_loss = float("inf")
         best_config: dict = {}
+        all_trials: list[dict] = []
 
         for i in range(n_iter):
             model_config = {
@@ -244,6 +245,7 @@ class MLPModel(BaseModel):
             candidate = MLPModel(self.config, model_config=model_config)
             val_loss = candidate.fit(step_result, refit=False)
             print(f"  [{i+1:>2}/{n_iter}] val_loss={val_loss:.6f}")
+            all_trials.append({"params": model_config, "val_loss": val_loss})
 
             if val_loss < best_loss:
                 best_loss = val_loss
@@ -257,6 +259,8 @@ class MLPModel(BaseModel):
         self.dropout       = best_config["dropout"]
         self.lr            = best_config["lr"]
         self.batch_size    = best_config["batch_size"]
+
+        save_tuning_results(all_trials, best_config, "MLP", self.config, step_result)
 
         return {"best_config": best_config, "val_loss": best_loss}
     

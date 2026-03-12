@@ -14,7 +14,7 @@ from transformers import PatchTSTConfig, PatchTSTForRegression
 from financial_TSF.data_models.config_data_model import AppConfig
 from financial_TSF.data_models.step_datamodel import StepResult
 from financial_TSF.models.base_model import BaseModel
-from financial_TSF.utils.utils import get_result_path, print_target_diagnostics, print_prediction_diagnostics, plot_learning_curve, save_param_dict
+from financial_TSF.utils.utils import get_result_path, print_target_diagnostics, print_prediction_diagnostics, plot_learning_curve, save_param_dict, save_tuning_results
 
 # default hyper-parameters 
 
@@ -518,6 +518,7 @@ def run_hyperparameter_tuning(pipeline_config: AppConfig, step_result: StepResul
 
     best_loss = float("inf")
     best_config: dict = {}
+    all_trials: list[dict] = []
 
     # loop 15 times over random configurations
     for i in range(15):
@@ -541,10 +542,12 @@ def run_hyperparameter_tuning(pipeline_config: AppConfig, step_result: StepResul
         model = PatchTSTWrapper(pipeline_config, model_config=model_config)
         final_val_loss = model.fit(step_result, refit=False)
         print(f"Validation Loss for Config {i}: {final_val_loss}")
+        all_trials.append({"params": model_config, "val_loss": final_val_loss})
 
         if final_val_loss < best_loss:
             best_loss = final_val_loss
             best_config = model_config
 
     print("Winner:", best_config, "with best loss:", best_loss)
+    save_tuning_results(all_trials, best_config, "PatchTST", pipeline_config, step_result)
     return best_config

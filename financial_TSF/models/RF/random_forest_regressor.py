@@ -10,17 +10,31 @@ from financial_TSF.data_models.step_datamodel import StepResult
 from financial_TSF.models.base_model import BaseModel
 from scipy.stats import randint
 
-from financial_TSF.utils.utils import get_result_path, save_param_dict, print_target_diagnostics, plot_learning_curve
+from financial_TSF.utils.utils import get_result_path, save_param_dict, print_target_diagnostics, plot_learning_curve, save_tuning_results
 
+
+#old params 
+
+# HYPERPARAMS: dict[str, Any] = {
+#     "n_estimators": 300,
+#     "random_state": 17,
+#     "n_jobs": -1,          # n_jobs=-1 copies X_train per worker on Windows (spawn) → OOM; keep 1
+#     "max_features": "sqrt",
+#     "min_samples_leaf": 40,
+#     "max_depth": 15,
+# }
+
+# after hyperparam tuning for complexity level 20
 
 
 HYPERPARAMS: dict[str, Any] = {
-    "n_estimators": 300,
+    "n_estimators": 100,
     "random_state": 17,
     "n_jobs": -1,          # n_jobs=-1 copies X_train per worker on Windows (spawn) → OOM; keep 1
-    "max_features": "sqrt",
+    "max_features": "log2",
     "min_samples_leaf": 40,
-    "max_depth": 15,
+    "min_samples_split": 30,
+    "max_depth": 10,
 }
 
 class RandomForestModel(BaseModel):
@@ -51,49 +65,51 @@ class RandomForestModel(BaseModel):
         rfr = RandomForestRegressor(criterion="squared_error", oob_score=True)
         rfr.set_params(**HYPERPARAMS)
 
-        # --- n_estimators learning curve (warm_start = one growing forest, no extra RAM) ---
-        n_total = HYPERPARAMS.get("n_estimators", 300)
-        n_steps = 10
-        step_size = max(1, n_total // n_steps)
-        checkpoints = list(range(step_size, n_total + 1, step_size))
-        if checkpoints[-1] != n_total:
-            checkpoints.append(n_total)
+        # n_estimators learning curve (warm_start = one growing forest, no extra RAM)
+        # n_total = HYPERPARAMS.get("n_estimators", 300)
+        # n_steps = 10
+        # step_size = max(1, n_total // n_steps)
+        # checkpoints = list(range(step_size, n_total + 1, step_size))
+        # if checkpoints[-1] != n_total:
+        #     checkpoints.append(n_total)
 
-        rfr.set_params(warm_start=True)
-        train_maes, val_maes = [], []
-        for n in checkpoints:
-            rfr.set_params(n_estimators=n)
-            rfr.fit(step_result.X_train, step_result.y_train)
-            train_maes.append(mean_absolute_error(step_result.y_train, rfr.predict(step_result.X_train)))
-            val_maes.append(mean_absolute_error(step_result.y_val,     rfr.predict(step_result.X_val)))
-            print(f"[RF] n_trees={n:>4}  train MAE={train_maes[-1]:.6f}  val MAE={val_maes[-1]:.6f}")
-        rfr.set_params(warm_start=False)
+        # rfr.set_params(warm_start=True)
+        # train_maes, val_maes = [], []
+        # for n in checkpoints:
+        #     rfr.set_params(n_estimators=n)
+        #     rfr.fit(step_result.X_train, step_result.y_train)
+        #     train_maes.append(mean_absolute_error(step_result.y_train, rfr.predict(step_result.X_train)))
+        #     val_maes.append(mean_absolute_error(step_result.y_val,     rfr.predict(step_result.X_val)))
+        #     print(f"[RF] n_trees={n:>4}  train MAE={train_maes[-1]:.6f}  val MAE={val_maes[-1]:.6f}")
+        # rfr.set_params(warm_start=False)
 
-        save_path = get_result_path(self.config, step_result)
-        plot_learning_curve(
-            train_maes, val_maes,
-            model_name="RF",
-            save_path=save_path,
-            xlabel="Number of Trees",
-            x_values=checkpoints,
-        )
-        # --- final diagnostics at full n_estimators ---
+        # save_path = get_result_path(self.config, step_result)
+        # plot_learning_curve(
+        #     train_maes, val_maes,
+        #     model_name="RF",
+        #     save_path=save_path,
+        #     xlabel="Number of Trees",
+        #     x_values=checkpoints,
+        # )
+
+        # --- single fit at full n_estimators ---
+        rfr.fit(step_result.X_train, step_result.y_train)
+        train_mae = mean_absolute_error(step_result.y_train, rfr.predict(step_result.X_train))
+        val_mae   = mean_absolute_error(step_result.y_val,   rfr.predict(step_result.X_val))
+
         self.estimator = rfr
         print("[RF] Fitted on X_train.")
         oob_mae = mean_absolute_error(step_result.y_train, rfr.oob_prediction_)
-        print(f"[RF] train MAE: {train_maes[-1]:.6f} | val MAE: {val_maes[-1]:.6f} | OOB MAE: {oob_mae:.6f}")
+        print(f"[RF] train MAE: {train_mae:.6f} | val MAE: {val_mae:.6f} | OOB MAE: {oob_mae:.6f}")
 
         save_param_dict(
-            {**HYPERPARAMS, "train_mae": train_maes[-1], "val_mae": val_maes[-1], "oob_mae": oob_mae},
+            {**HYPERPARAMS, "train_mae": train_mae, "val_mae": val_mae, "oob_mae": oob_mae},
             self.config, step_result,
         )
 
         importances = pd.Series(rfr.feature_importances_, index=step_result.X_train.columns)
         importances = importances.sort_values(ascending=False)
-        print("Feature importances:\n", importances)
-
-        self.save_model(step_result)
-            
+        print("Feature importances:\n", importances)            
             
         
     def predict(self, step_result: StepResult) -> tuple[pd.Series, pd.Series, pd.Series, pd.Series]:
@@ -151,7 +167,7 @@ class RandomForestModel(BaseModel):
 
         best_mse = float("inf")
         best_params: dict = {}
-        results: list[dict] = []
+        all_trials: list[dict] = []
 
         for i in range(n_iter):
             # sample one random config dict
@@ -167,32 +183,26 @@ class RandomForestModel(BaseModel):
             rfr.fit(X_train, y_train)
             val_pred = rfr.predict(X_val)
             mse = mean_squared_error(y_val, val_pred)
+            mae = mean_absolute_error(y_val, val_pred)
 
-            results.append({**params, "val_mse": mse})
-            print(f"  [{i+1:>2}/{n_iter}] val_MSE={mse:.6f}  {params}")
+            # normalise numpy scalar types so they serialise cleanly
+            clean_params = {
+                k: v.item() if isinstance(v, np.generic) else v
+                for k, v in params.items()
+            }
+            all_trials.append({"params": clean_params, "val_loss": float(mae), "val_mse": float(mse)})
+            print(f"  [{i+1:>2}/{n_iter}] val_MSE={mse:.6f}  val_MAE={mae:.6f}  {params}")
 
             if mse < best_mse:
                 best_mse = mse
-                best_params = params
+                best_params = clean_params
 
         print(f"\n[RF] Best val_MSE={best_mse:.6f}")
         print(f"[RF] Best params: {best_params}")
-        
-        result_dir: Path = get_result_path(self.config, step_result) / "hyperparameter_tuning"
-        result_dir.mkdir(parents=True, exist_ok=True)
-        
-        pd.DataFrame(results).to_csv(result_dir / f"hyperparameter_tuning_results_for{self.config.features.complexity_levels}.csv", index=False)
-        
-        for param in best_params:
-            val = best_params[param]
-            if isinstance(val, np.generic):
-                best_params[param] = val.item()
-            
-        with open(result_dir / f"best_params_for{self.config.features.complexity_levels}.json", "w") as f:
-            json.dump(best_params, f, indent=4)
-            print(f"[RF] Hyperparameter tuning results saved to {result_dir / f'best_params_for{self.config.features.complexity_levels}.json'}")
 
-        #update global HYPERPARAMS with best params
+        save_tuning_results(all_trials, best_params, "RF", self.config, step_result)
+
+        # update global HYPERPARAMS with best params
         HYPERPARAMS.update(best_params)
 
         return {"best_params": best_params, "val_mse": best_mse}
