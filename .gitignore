@@ -9,4 +9,5 @@ results_*/
 plots/*
 financial_TSF/features/old_configs/*
 tests/resources/stock_prices.csv
-resultsTraining/*
+resultsTraining/
+thesis_results/

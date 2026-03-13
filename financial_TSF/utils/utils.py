@@ -1,6 +1,5 @@
-from datetime import datetime
 from pathlib import Path
-
+import json
 import torch
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -100,19 +99,18 @@ def save_tuning_results(
     config: AppConfig,
     step_result: StepResult,
 ) -> None:
-    """Save hyperparameter tuning results to a structured JSON file.
+    """Save hyperparameter tuning results to JSON
 
     Parameters
-    ----------
+    -
     all_trials : list[dict]
-        Each entry must contain "params" (dict) and "val_loss" (float).
+        "params" (dict) and "val_loss" (float)
     final_params : dict
-        The hyperparameter set actually passed to the final fit() call.
+       the best params.
     model_name : str
         e.g. "MLP", "RF", "PatchTST"
     config, step_result : used to resolve the output directory.
     """
-    import json
 
     sorted_trials = sorted(all_trials, key=lambda x: x["val_loss"])
     best_val_loss = sorted_trials[0]["val_loss"] if sorted_trials else None
