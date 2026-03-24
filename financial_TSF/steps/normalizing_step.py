@@ -15,6 +15,7 @@ class ScalingStep(PipelineStep):
         self.winsorize_quantile_y = 0.005
 
 
+
     def execute(self, step_result: StepResult) -> StepResult:
         """
         Scales data using the corresponding scaler
@@ -86,6 +87,8 @@ class ScalingStep(PipelineStep):
                 
                 x_scaler.fit(split_data['X_train'])
                 y_scaler.fit(split_data['y_train'])
+                # x_scaler.fit(pd.concat([split_data['X_train'], split_data['X_val']]))
+                # y_scaler.fit(pd.concat([split_data['y_train'], split_data['y_val']]))
                 
                 # Extract column names before transforming
                 x_cols = split_data['X_train'].columns
@@ -98,16 +101,64 @@ class ScalingStep(PipelineStep):
                 y_val_raw = y_scaler.transform(split_data['y_val'])
                 y_test_raw = y_scaler.transform(split_data['y_test'])
                 
+                
                 # Convert back to DataFrames with original Index and Column names
                 step_result.split_data[idx]['X_train'] = pd.DataFrame(x_train_raw, columns=x_cols, index=split_data['X_train'].index)
                 step_result.split_data[idx]['X_val'] = pd.DataFrame(x_val_raw, columns=x_cols, index=split_data['X_val'].index)
                 step_result.split_data[idx]['X_test'] = pd.DataFrame(x_test_raw, columns=x_cols, index=split_data['X_test'].index)
+                # add index from X because it also has the ticker in index
                 step_result.split_data[idx]['y_train'] = pd.DataFrame(y_train_raw, columns=y_cols, index=split_data['X_train'].index)
                 step_result.split_data[idx]['y_val'] = pd.DataFrame(y_val_raw, columns=y_cols, index=split_data['X_val'].index)
                 step_result.split_data[idx]['y_test'] = pd.DataFrame(y_test_raw, columns=y_cols, index=split_data['X_test'].index)
                 
                 step_result.split_data[idx]['x_scaler'] = x_scaler
                 step_result.split_data[idx]['y_scaler'] = y_scaler
+                
+                # ----- VALIDATION LOGGING: Index alignment and column preservation -----
+                ticker_name = split_data.get("ticker_name", f"Ticker_{idx}")
+                print(f"\n[ScalingStep] Validation for '{ticker_name}':")
+                
+                # Check X columns preserved
+                if set(split_data['X_train'].columns) != set(step_result.split_data[idx]['X_train'].columns):
+                    print(f"  ERROR: X_train columns changed!")
+                    print(f"    Before: {sorted(split_data['X_train'].columns.tolist())}")
+                    print(f"    After: {sorted(step_result.split_data[idx]['X_train'].columns.tolist())}")
+                else:
+                    print(f"  OK: X column order preserved ({len(x_cols)} features)")
+                
+                # Check y columns preserved
+                if set(split_data['y_train'].columns) != set(step_result.split_data[idx]['y_train'].columns):
+                    print(f"  ERROR: y_train columns changed!")
+                else:
+                    print(f"  OK: y column order preserved ({len(y_cols)} targets)")
+                
+                # Check index alignment by length
+                x_train_len = len(step_result.split_data[idx]['X_train'])
+                y_train_len = len(step_result.split_data[idx]['y_train'])
+                x_val_len = len(step_result.split_data[idx]['X_val'])
+                y_val_len = len(step_result.split_data[idx]['y_val'])
+                x_test_len = len(step_result.split_data[idx]['X_test'])
+                y_test_len = len(step_result.split_data[idx]['y_test'])
+                
+                print(f"  Index structure (may differ):")
+                print(f"    X_train: {type(step_result.split_data[idx]['X_train'].index).__name__}")
+                print(f"    y_train: {type(step_result.split_data[idx]['y_train'].index).__name__}")
+                
+                if x_train_len != y_train_len:
+                    print(f"  ERROR: X_train length ({x_train_len}) != y_train length ({y_train_len})")
+                else:
+                    print(f"  OK: X_train and y_train lengths match ({x_train_len})")
+                    
+                if x_val_len != y_val_len:
+                    print(f"  ERROR: X_val length ({x_val_len}) != y_val length ({y_val_len})")
+                else:
+                    print(f"  OK: X_val and y_val lengths match ({x_val_len})")
+                    
+                if x_test_len != y_test_len:
+                    print(f"  ERROR: X_test length ({x_test_len}) != y_test length ({y_test_len})")
+                else:
+                    print(f"  OK: X_test and y_test lengths match ({x_test_len})")
+            
             
         x_train_scaled = [split['X_train'] for split in step_result.split_data]
         x_val_scaled = [split['X_val'] for split in step_result.split_data]
@@ -123,13 +174,34 @@ class ScalingStep(PipelineStep):
         #     visualizer = FeatureVisualization(x_train_scaled, folder='/boxplots/robustscaled')
         #     visualizer.run()
         
-        y_train_scaled = [split['y_train'] for split in step_result.split_data]
-        visualizer = FeatureVisualization(y_train_scaled, folder='targets_scaled_y_train')
-        visualizer.run()
-        y_train_scaled = [split['y_val'] for split in step_result.split_data]
-        visualizer = FeatureVisualization(y_train_scaled, folder='targets_scaled_y_val')
-        visualizer.run()
-            
+        # ---- save scaled features for all dataframes for thesis ---- 
+        # y_train_scaled = [split['y_train'] for split in step_result.split_data]
+        # visualizer = FeatureVisualization(y_train_scaled, folder='results/datasets/targets_scaled_y_train')
+        # visualizer.run()
+        # y_val_scaled = [split['y_val'] for split in step_result.split_data]
+        # visualizer = FeatureVisualization(y_val_scaled, folder='results/datasets/targets_scaled_y_val')
+        # visualizer.run()
+        
+        # visualizer = FeatureVisualization(x_train_scaled, folder='results/datasets/features_scaled_X_train')
+        # visualizer.run()
+        # visualizer = FeatureVisualization(x_val_scaled, folder='results/datasets/features_scaled_X_val')
+        # visualizer.run()
+        
+        # ---- PRINTing summary statistics after scaling for all dataframes ----
+        
+        # x_train_scaled = pd.DataFrame(pd.concat(x_train_scaled, axis=0))
+        # x_val_scaled = pd.DataFrame(pd.concat(x_val_scaled, axis=0))
+        # x_test_scaled = pd.DataFrame(pd.concat(x_test_scaled, axis=0))
+        # y_train_scaled = pd.DataFrame(pd.concat(y_train_scaled, axis=0))
+        # y_val_scaled = pd.DataFrame(pd.concat(y_val_scaled, axis=0))
+        
+        # print("Overall scaled X_train_features: ", x_train_scaled.describe().round(4))
+        # print("Overall scaled X_val_features: ", x_val_scaled.describe().round(4))
+        # print("Overall scaled X_test_features: ", x_test_scaled.describe().round(4)
+        #       )
+        # print("Overall scaled y_train_targets: ", y_train_scaled.describe().round(4))
+        # print("Overall scaled y_val_targets: ", y_val_scaled.describe().round(4))
+        
             
         # put all together for training step again :)
         step_result.X_train = pd.concat([step_result.split_data[i]['X_train'] for i in range(len(step_result.split_data))], axis=0)
@@ -138,6 +210,7 @@ class ScalingStep(PipelineStep):
         step_result.y_train = pd.concat([step_result.split_data[i]['y_train'] for i in range(len(step_result.split_data))], axis=0)
         step_result.y_val = pd.concat([step_result.split_data[i]['y_val'] for i in range(len(step_result.split_data))], axis=0)
         step_result.y_test = pd.concat([step_result.split_data[i]['y_test'] for i in range(len(step_result.split_data))], axis=0)
+        
         
         #  ---------- sort for time order -----------
         # sort multiindex by level 0 (timestamp)

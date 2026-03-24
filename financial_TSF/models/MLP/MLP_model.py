@@ -10,7 +10,7 @@ from financial_TSF.models.base_model import BaseModel
 from financial_TSF.steps.batching_step import create_dataloader
 from torch import nn
 
-from financial_TSF.utils.utils import get_result_path, print_target_diagnostics, print_prediction_diagnostics, plot_learning_curve, save_tuning_results
+from financial_TSF.utils.utils import get_result_path, print_target_diagnostics, print_prediction_diagnostics, plot_learning_curve, save_param_dict, save_tuning_results
 
 # inspired from https://github.com/christianversloot/machine-learning-articles/blob/main/how-to-create-a-neural-network-for-regression-with-pytorch.md
 
@@ -34,6 +34,9 @@ class MLPModel(BaseModel):
 
     def fit(self, step_result: StepResult, refit: bool = True):
         
+        
+        save_param_dict(MODEL_PARAMS, self.config, step_result )
+        
         train_losses = []
         val_losses = []
 
@@ -41,7 +44,7 @@ class MLPModel(BaseModel):
         # create separate val dataset
         val_loader  = create_dataloader(step_result.X_val, step_result.y_val, batch_size=self.batch_size, shuffle=False)
 
-        print_target_diagnostics(step_result.y_train)
+        # print_target_diagnostics(step_result.y_train)
 
         # initialize model
         input_dim = step_result.X_train.shape[1]
@@ -64,7 +67,7 @@ class MLPModel(BaseModel):
         best_epoch = 1
         
         
-        for epoch in range(1000):  # number of epochs
+        for epoch in range(150):  # number of epochs
             print(f'Starting epoch {epoch+1}')
             
             self.model.train()
@@ -237,7 +240,7 @@ class MLPModel(BaseModel):
                 "dropout":       random.choice(param_grid["dropout"]),
                 "lr":            random.choice(param_grid["lr"]),
                 "batch_size":    random.choice(param_grid["batch_size"]),
-                "patience":      30,
+                "patience":      10,
             }
 
             print(f"\n  [{i+1:>2}/{n_iter}] Config: {model_config}")
@@ -299,8 +302,8 @@ class DynamicMLP(nn.Module):
         
         for h_dim in hidden_layers:
             layers.append(nn.Linear(in_dim, h_dim))
-            layers.append(nn.ReLU()) # maybe gelu?
-            layers.append(nn.Dropout(dropout_rate)) # add dropout for better generalization
+            layers.append(nn.GELU())  # GELU avoids dying ReLU — smooth gradient for near-zero activations
+            layers.append(nn.Dropout(dropout_rate))
             in_dim = h_dim
             
         # Output Layer 

@@ -33,13 +33,13 @@ class SavingStep(PipelineStep):
         with open(run_dir / "metrics.json", "w") as f:
             json.dump(step_result.metrics, f, indent=4)
         
-            
+             
         # save prediction data
-        
-        pd.DataFrame(step_result.y_test).to_csv(run_dir / "y_test.csv", index=False)
-        pd.DataFrame(step_result.y_train).to_csv(run_dir / "y_train.csv", index=False)
-        pd.DataFrame(step_result.y_test_pred).to_csv(run_dir / "y_test_pred.csv", index=False)
-        pd.DataFrame(step_result.y_train_pred).to_csv(run_dir / "y_train_pred.csv", index=False)
+        # dont save prediction data, can be recreated with model and config 
+        # pd.DataFrame(step_result.y_test).to_csv(run_dir / "y_test.csv", index=False)
+        # pd.DataFrame(step_result.y_train).to_csv(run_dir / "y_train.csv", index=False)
+        # pd.DataFrame(step_result.y_test_pred).to_csv(run_dir / "y_test_pred.csv", index=False)
+        # pd.DataFrame(step_result.y_train_pred).to_csv(run_dir / "y_train_pred.csv", index=False)
         
         # save metrics to csv for later analysis
         metrics_df = pd.DataFrame.from_dict(step_result.metrics, orient='index')

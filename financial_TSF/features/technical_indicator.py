@@ -220,7 +220,7 @@ class TechnicalIndicators:
     
     def simple_return(self, feature_name, data, window_size: int) -> DataFrame:
         """Calculate the simple return."""
-        data[f'{feature_name}_{window_size}'] = data['close'] / data['close'].shift(window_size) - 0.001
+        data[f'{feature_name}_{window_size}'] = data['close'] / data['close'].shift(window_size) - 1
         return data
     
     def log_return(self, feature_name, data, window_size: int) -> DataFrame:
@@ -347,7 +347,7 @@ class TechnicalIndicators:
 
         df['Ratio'] = df['EMA1'] / df['EMA2']
         df['MassIndex'] = df['Ratio'].rolling(window=sum_period).sum()
-        data[f'{feature_name}_{ema_period}_{sum_period}'] = df[['MassIndex']]
+        data[f'{feature_name}_{ema_period}_{sum_period}'] = df['MassIndex']
 
         return data
     

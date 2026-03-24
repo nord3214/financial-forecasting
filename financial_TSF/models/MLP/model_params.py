@@ -1,9 +1,9 @@
 
 
 MODEL_PARAMS = {
-    "hidden_layers": [256, 256, 128, 64], 
-    "dropout": 0.3,
+    "hidden_layers": [256, 128, 64, 32], 
+    "dropout": 0.001,
     "lr": 0.001,
-    "batch_size": 64,
-    "patience": 15
+    "batch_size": 128,
+    "patience": 200
 }
