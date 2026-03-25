@@ -67,7 +67,7 @@ class MLPModel(BaseModel):
         best_epoch = 1
         
         
-        for epoch in range(150):  # number of epochs
+        for epoch in range(400):  # number of epochs
             print(f'Starting epoch {epoch+1}')
             
             self.model.train()

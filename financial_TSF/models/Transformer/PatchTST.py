@@ -20,19 +20,19 @@ from financial_TSF.utils.utils import get_result_path, print_target_diagnostics,
 
 PATCHTST_PARAMS: dict[str, Any] = {
     "context_length": 128,       # lookback window intervals
-    "patch_length": 4,          # length of each patch
-    "patch_stride": 2,          # stride between patches (2 = overlapping, 4 = non-overlapping)
-    "d_model": 32,              # transformer hidden dimension
+    "patch_length": 16,          # length of each patch
+    "patch_stride": 8,           # stride between patches
+    "d_model": 64,               # transformer hidden dimension
     "num_attention_heads": 4,
-    "num_hidden_layers": 2,
-    "ffn_dim": 64,
-    "dropout": 0.4,
-    "head_dropout": 0.3,
-    "weight_decay": 1e-3,       # L2 regularization
+    "num_hidden_layers": 3,
+    "ffn_dim": 128,
+    "dropout": 0.003,
+    "head_dropout": 0.002,
+    "weight_decay": 1e-4,       # L2 regularization
     "batch_size": 64,
-    "lr": 1e-4,
-    "num_epochs": 30,
-    "patience": 15,             # early-stopping patience (epochs)
+    "lr": 5e-4,
+    "num_epochs": 300,
+    "patience": 30,              # early-stopping patience (epochs)
 }
 
 
@@ -270,8 +270,7 @@ class PatchTSTWrapper(BaseModel):
             targets.append(target)
 
         return _LazySlidingWindowDataset(segments, targets, self.context_length)
-
-    def fit(self, step_result: StepResult, refit: bool = True) -> Any:
+    def fit(self, step_result: StepResult, refit: bool = False) -> Any:
         split_data = step_result.split_data
 
         # datasets
@@ -282,8 +281,6 @@ class PatchTSTWrapper(BaseModel):
         train_loader = DataLoader(train_ds, batch_size=self.batch_size, shuffle=True)
         val_loader   = DataLoader(val_ds,   batch_size=self.batch_size, shuffle=False)
 
-        # --- target distribution diagnostics ---
-        print_target_diagnostics(step_result.y_train)
 
         # model initialisation
         num_features = split_data[0]["X_train"].shape[1]
@@ -330,16 +327,28 @@ class PatchTSTWrapper(BaseModel):
             # --- train ---
             self.model.train()
             train_loss_sum = 0.0
-            for windows, targets in train_loader:
+            for i, (windows, targets) in enumerate(train_loader):
                 windows = windows.to(self.device)
                 targets = targets.to(self.device)
 
                 optimizer.zero_grad()
                 preds = self.model(past_values=windows).regression_outputs
                 loss = loss_fn(preds, targets)
-                loss.backward()
+                loss.backward()       
+                
+                if  i == 0 and (epoch + 1) % 5 == 0:
+                    for name, param in self.model.named_parameters():
+                        if param.grad is not None:
+                            grad_norm = param.grad.norm().item()
+                            print(f"[Grad] {name:40s}  norm={grad_norm:.2e}")
+                            
+                                     
                 optimizer.step()
                 train_loss_sum += loss.item()
+                
+                # gradient diagnostics
+
+
 
             avg_train = train_loss_sum / len(train_loader)
 
@@ -507,13 +516,19 @@ def run_hyperparameter_tuning(pipeline_config: AppConfig, step_result: StepResul
     # define search space
     param_grid = {
         "context_length": [64, 128, 256],
-        "patch_length": [4, 8, 16],
-        "d_model": [32, 64, 128],
+        "patch_length": [8, 16],
+        "patch_stride": [4, 8],
+        "d_model": [64, 128],
         "num_attention_heads": [2, 4, 8],
-        "num_hidden_layers": [2, 4, 8],
-        "ffn_dim": [64, 128, 256],
-        "batch_size": [32, 64, 128],
-        "lr": [1e-4],
+        "num_hidden_layers": [2, 3, 4],
+        "ffn_dim": [128, 256],
+        "dropout": [0.1, 0.2, 0.3],
+        "head_dropout": [0.05, 0.1, 0.2],
+        "weight_decay": [1e-5, 1e-4, 5e-4, 1e-3],
+        "batch_size": [32, 64],
+        "lr": [1e-4, 3e-4],
+        "num_epochs": [40, 50],
+        "patience": [6, 8, 10, 12],
     }
 
     best_loss = float("inf")
@@ -522,19 +537,28 @@ def run_hyperparameter_tuning(pipeline_config: AppConfig, step_result: StepResul
 
     # loop 15 times over random configurations
     for i in range(15):
+        d_model = random.choice(param_grid["d_model"])
+        valid_heads = [
+            h for h in param_grid["num_attention_heads"]
+            if d_model % h == 0 and (d_model // h) >= 8
+        ]
+        num_heads = random.choice(valid_heads)
+
         model_config = {
             "context_length": random.choice(param_grid["context_length"]),
             "patch_length": random.choice(param_grid["patch_length"]),
-            "d_model": random.choice(param_grid["d_model"]),
-            "num_attention_heads": random.choice(param_grid["num_attention_heads"]),
+            "patch_stride": random.choice(param_grid["patch_stride"]),
+            "d_model": d_model,
+            "num_attention_heads": num_heads,
             "num_hidden_layers": random.choice(param_grid["num_hidden_layers"]),
             "ffn_dim": random.choice(param_grid["ffn_dim"]),
-            "dropout": 0.2,
-            "head_dropout": 0.2,
+            "dropout": random.choice(param_grid["dropout"]),
+            "head_dropout": random.choice(param_grid["head_dropout"]),
+            "weight_decay": random.choice(param_grid["weight_decay"]),
             "batch_size": random.choice(param_grid["batch_size"]),
             "lr": random.choice(param_grid["lr"]),
-            "num_epochs": 100,
-            "patience": 90,
+            "num_epochs": random.choice(param_grid["num_epochs"]),
+            "patience": random.choice(param_grid["patience"]),
         }
 
         print(f"Testing Config {i}: {model_config}")

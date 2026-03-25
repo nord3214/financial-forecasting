@@ -22,8 +22,8 @@ class EvaluationStep(PipelineStep):
         step_result = self.map_predictions_to_tickers(step_result)
         step_result = self.unscale_predictions(step_result)
         
-        # efficient_frontier = PortfolioOptimizer(split_data=step_result.split_data, horizons=self.config.settings.forecast_horizon)
-        # efficient_frontier.run()
+        efficient_frontier = PortfolioOptimizer(split_data=step_result.split_data, horizons=self.config.settings.forecast_horizon)
+        step_result.metrics['economic_evaluation'] = efficient_frontier.run()
         
         graph_visualization = GraphVisualization(config=self.config, step_result=step_result)
         graph_visualization.run()
@@ -32,7 +32,7 @@ class EvaluationStep(PipelineStep):
         
                 
         # do whole evaluation here and save metrics in step_result.metrics
-        step_result.metrics = self.compute_multistep_metrics(step_result.y_test, step_result.y_test_pred, step_result)
+        step_result.metrics['machine_learning_evaluation'] = self.compute_multistep_metrics(step_result.y_test, step_result.y_test_pred, step_result)
         
         
         
