@@ -33,6 +33,7 @@ class TopKSimulator:
         if None - hold to maturity used
         if str column name need to specify log returns of current interval 
         """
+        raise NotImplementedError("Currently this method also unscales data so double unscaling need to fix!")
                     
         pred_frames = []
         actual_frames = []

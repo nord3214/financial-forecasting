@@ -16,6 +16,7 @@ from pypfopt import risk_models
 class PortfolioOptimizer:
     
     def __init__(self, split_data: list[SplitData], horizons: list[int]):
+        """split data needs to be already unscaled for this"""
         self.split_data = split_data
         self.horizons = horizons
 
@@ -46,9 +47,23 @@ class PortfolioOptimizer:
     
     def run_portfolio_optimization_for_horizon(self, horizon: int):
         
+        use_naive_forecast = False
+        
+        
+            
+        
         y_pred = self.transform_predictions_into_py_opt_format(horizon=horizon, dataset="y_test_pred")
         y_ground_truth = self.transform_predictions_into_py_opt_format(horizon=horizon, dataset="y_test")
         y_train_hist = self.transform_predictions_into_py_opt_format(horizon=horizon, dataset="y_train")
+        
+        if use_naive_forecast:
+            # naive baseline: predict the in-sample mean log-return for every test period
+            train_mean = y_train_hist.mean()          # Series: ticker -> mean log-return
+            y_pred = pd.DataFrame(
+                np.tile(train_mean.values, (len(y_pred), 1)),
+                index=y_pred.index,
+                columns=y_pred.columns,
+            )
 
         # Intraday frequency: 252 trading days * 78 five-minute bars/day, stepped by horizon
         # e.g. horizon=48 -> each period = 48 * 5min = 4h -> ~409 periods/year
@@ -61,6 +76,13 @@ class PortfolioOptimizer:
         S = risk_models.CovarianceShrinkage(
             y_train_hist, returns_data=True, frequency=PERIODS_PER_YEAR
         ).ledoit_wolf()
+        
+        # # Exponentially weighted — more weight on recent data, better for non-stationary
+        # S = risk_models.exp_cov(y_train_hist, returns_data=True, frequency=PERIODS_PER_YEAR, span=180)
+
+        # # Sample covariance — no shrinkage, noisiest
+        # S = risk_models.sample_cov(y_train_hist, returns_data=True, frequency=PERIODS_PER_YEAR)
+
 
         portfolio_log_returns = []
 
@@ -96,9 +118,32 @@ class PortfolioOptimizer:
                 f"Annualized return: {annualized_return:.4f}, "
                 f"Sharpe: {sharpe:.4f}")
         
+        result: dict = {
+            "horizon": horizon,
+            "periods_rebalancing": len(portfolio_returns),
+            "cumulative_log_return": cumulative_return,
+            "annualized_return": annualized_return,
+            "sharpe": sharpe
+        }
+        
+        return result
+        
     def run(self): 
+        
+        results = []
         
         for horizon in self.horizons:
             print(f"Running portfolio optimization for horizon {horizon}...")
             
-            self.run_portfolio_optimization_for_horizon(horizon)
+            results.append(self.run_portfolio_optimization_for_horizon(horizon))
+            
+        print("\n--- Portfolio Optimization Summary ---")
+        for res in results:
+            print(f"Horizon {res['horizon']}: "
+                    f"Periods: {res['periods_rebalancing']}, "
+                    f"Cumulative log-return: {res['cumulative_log_return']:.4f}, "
+                    f"Annualized return: {res['annualized_return']:.4f}, "
+                    f"Sharpe: {res['sharpe']:.4f}")
+            
+        return results
+            

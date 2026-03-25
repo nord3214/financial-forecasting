@@ -15,7 +15,6 @@ class ScalingStep(PipelineStep):
         self.winsorize_quantile_y = 0.005
 
 
-
     def execute(self, step_result: StepResult) -> StepResult:
         """
         Scales data using the corresponding scaler
@@ -113,6 +112,7 @@ class ScalingStep(PipelineStep):
                 
                 step_result.split_data[idx]['x_scaler'] = x_scaler
                 step_result.split_data[idx]['y_scaler'] = y_scaler
+                # self.show_statistics(step_result.split_data[idx]['X_train'], step_result.split_data[idx]['X_val'], step_result.split_data[idx]['X_test'])
                 
                 # ----- VALIDATION LOGGING: Index alignment and column preservation -----
                 ticker_name = split_data.get("ticker_name", f"Ticker_{idx}")
@@ -297,3 +297,39 @@ class ScalingStep(PipelineStep):
         # df_scaled = DataFrame(scaled_array, columns=df.columns, index=df.index)
         
         return df_scaled
+    
+
+    def show_statistics(self, X_train, X_val, X_test):
+        """Print summary statistics for the corresponding sets and selected features"""
+        feature_columns = X_train.columns  
+        feature_columns = feature_columns[:5]
+        feature_columns = ['LOG_VOLUME', 'LOGRET_1', 'Kurtosis_50' ]
+        statistics = []       
+        for dataset in [X_train, X_val, X_test]:
+            print("Statitsics for ticker: ", dataset.index.get_level_values('ticker')[0])
+            for feature in feature_columns:
+                mean = dataset[feature].mean()
+                std = dataset[feature].std()
+                median = dataset[feature].median()
+                set_name = "Training" if dataset.equals(X_train) else "Validation" if dataset.equals(X_val) else "Test"
+                statistics.append({
+                    'Feature': feature,
+                    'Dataset': set_name,
+                    'Mean': mean,
+                    'Std': std,
+                    'Median': median
+                })
+        statistics_df = pd.DataFrame(statistics)
+        statistics_df.set_index(['Feature'], inplace=True)
+        statistics_df = statistics_df.sort_index()
+        statistics_df.set_index('Dataset', append=True, inplace=True)
+        
+        latex_code = statistics_df.to_latex(
+            index=True, 
+            multicolumn=True, 
+            multicolumn_format='c', 
+            bold_rows=False,
+        )
+
+        print(statistics_df.round(2))
+        print(latex_code)

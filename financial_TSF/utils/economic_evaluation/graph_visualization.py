@@ -51,35 +51,53 @@ class GraphVisualization:
         split     = self.step_result.split_data[0]
         y_test    = split["y_test"]
         y_pred    = split["y_test_pred"]
-        col       = y_test.columns[0]   # first horizon column
+        cols      = y_test.columns   # last horizon column when using all from thesis lockback window = 48
 
         # MultiIndex: level 0 is the timestamp – keep first 7 calendar days
         timestamps = y_test.index.get_level_values(0)
         display_dates = pd.Timedelta(days=7)
         display_dates = None
-        if display_dates: 
-            cutoff = timestamps.min() + display_dates
-        else:
-            cutoff = timestamps.max()
         
-        mask       = timestamps < cutoff
+        for col in cols:
+            horizon = col.split("_")[-1]  # get number of horizons form column name
+            graph_title = f"Log-return of the next {horizon}-Intervals" 
+            if display_dates: 
+                cutoff = timestamps.min() + display_dates
+                graph_title += f" (first {display_dates.days} days)"
+            else:
+                cutoff = timestamps.max()
+            
+            mask       = timestamps < cutoff
 
-        actual    = y_test.loc[mask, col]
-        predicted = y_pred.loc[mask, col]
-        dates     = actual.index.get_level_values(0)
+            actual    = y_test.loc[mask, col]
+            predicted = y_pred.loc[mask, col]
+            dates     = actual.index.get_level_values(0)
+            
+            plot_df = pd.DataFrame({
+                'Date': dates,
+                'Actual': actual.values,
+                'Predicted': predicted.values
+            }).sort_values('Date')
+            
+            expected_step = pd.Timedelta(minutes=5)
+            
+            gap_mask = plot_df["Date"].diff() > expected_step * 1.5
 
-        fig, ax = plt.subplots(figsize=(10, 4))
-        ax.plot(actual.values,    color=self.primary_color,   linewidth=1.5, label="Ground Truth")
-        ax.plot(predicted.values, color=self.secondary_color, linewidth=1.5, label="Forecast")
-        ax.set_title(f"Return Prediction — {col} (first 7 days)")
-        ax.set_xlabel("Number of Predictions")
-        ax.set_ylabel("Log Return")
-        ax.legend()
-        plt.tight_layout()
-        save_path = self.output_path / f"weekly_predictions_{col}.pdf"
-        plt.savefig(save_path)
-        plt.close()
-        print(f"[GraphVisualization] Saved weekly predictions plot -> {save_path}")
+        
+            plot_df.loc[gap_mask, ["Actual", "Predicted"]] = np.nan
+
+            fig, ax = plt.subplots(figsize=(10, 4))
+            ax.plot(plot_df["Date"], plot_df["Actual"],    color=self.primary_color,   linewidth=1.5, label="Ground Truth")
+            ax.plot(plot_df["Date"], plot_df["Predicted"], color=self.secondary_color, linewidth=1.5, label="Forecast")
+            ax.set_title(graph_title)
+            ax.set_xlabel("Date of Predictions")
+            ax.set_ylabel("Log-return")
+            ax.legend(loc="upper right")
+            plt.tight_layout()
+            save_path = self.output_path / f"weekly_predictions_{col}.pdf"
+            plt.savefig(save_path)
+            plt.close()
+            print(f"[GraphVisualization] Saved weekly predictions plot -> {save_path}")
 
 
 
