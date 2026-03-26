@@ -99,7 +99,7 @@ class TechnicalIndicators:
     
     def remove_basic_columns_from_dataset(self, data: DataFrame) -> DataFrame:
         """Remove basic columns from the dataset, keeping only technical indicators."""
-        basic_columns = ['open', 'high', 'low', 'close', 'volume', 'ticker']
+        basic_columns = ['open', 'high', 'low', 'close', 'volume']
         
         return data.drop(columns=basic_columns)            
 

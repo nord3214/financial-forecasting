@@ -8,6 +8,7 @@ from financial_TSF.data_models.config_data_model import AppConfig
 from financial_TSF.features.technical_indicator import TechnicalIndicators
 from financial_TSF.data_models.step_datamodel import StepResult
 from financial_TSF.steps.base_step import PipelineStep
+from financial_TSF.utils.utils import get_target_column_names
 from financial_TSF.visualization.financial_eda import FinancialEDA
 
 
@@ -16,6 +17,7 @@ class FeatureStep(PipelineStep):
     def __init__(self, config: AppConfig) -> None:
         self.config: AppConfig = config
         self.complexity_levels = self.config.features.complexity_levels
+        self.forecast_horizons = self.config.settings.forecast_horizon
         
         with open(self.config.features.feature_config_path, "r") as f:
             self.feature_config: Dict[str, Any] = json.load(f)
@@ -67,6 +69,8 @@ class FeatureStep(PipelineStep):
                 })
                 
                 
+                data[i] = self.calculate_target_columns(df)
+                
                 # Go over all technical indicators from config and apply them
                 tech_indicators = TechnicalIndicators(self.config.features.feature_config_path, df)
                 
@@ -97,6 +101,19 @@ class FeatureStep(PipelineStep):
         data = pd.read_parquet(load_path)
         
         return data
+    
+    
+    def calculate_target_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+        # save all target column names to return
+        target_column_names = get_target_column_names(self.forecast_horizons)
+        for column_name in target_column_names:
+            # extract horizon from column name
+            horizon = int(column_name.split("_")[-1])
+            df_temp = df.copy()
+            df_temp["LOGRET_1"] = np.log(df_temp['close'] / df_temp['close'].shift(1))
+            df[column_name] = df_temp['LOGRET_1'].rolling(window=horizon).sum().shift(-horizon)
+                
+        return df
     
 
 

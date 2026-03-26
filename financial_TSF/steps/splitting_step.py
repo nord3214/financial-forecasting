@@ -3,6 +3,7 @@ import pandas as pd
 from financial_TSF.data_models.config_data_model import AppConfig
 from financial_TSF.data_models.step_datamodel import StepResult
 from financial_TSF.steps.base_step import PipelineStep
+from financial_TSF.utils.utils import get_target_column_names
 from financial_TSF.visualization.financial_eda import FinancialEDA
 
 HIGHLY_CORRELATED_FEATURES: list[str] = ['open', 'high', 'low', 'close']
@@ -36,10 +37,12 @@ class SplittingStep(PipelineStep):
         
         # loop1 determin global split points based on largest dataframe
         for i, ticker_df in enumerate(step_result.data):
-            step_result.data[i], target_column_names = self.calculate_target_columns(ticker_df)
+            
+            step_result.data[i] = ticker_df
+            target_column_names = get_target_column_names(self.forecast_horizons)
             
             # remove highly correlated features if any (correlation > 0.xx)
-            step_result.data[i] = step_result.data[i].drop(columns=self.highly_correlated_features)
+            # step_result.data[i] = step_result.data[i].drop(columns=self.highly_correlated_features)
                         
             # remove rows with NaN values created by shifting for target columns/ or feature calculation
             step_result.data[i] = step_result.data[i].dropna()
@@ -134,19 +137,6 @@ class SplittingStep(PipelineStep):
         
         
         return step_result
-    
-    def calculate_target_columns(self, df: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
-        # save all target column names to return
-        target_column_names = []
-        for horizon in self.forecast_horizons:
-            column_name = f"target_{horizon}"
-            
-            df_temp = df.copy()
-            df_temp["LOGRET_1"] = np.log(df_temp['close'] / df_temp['close'].shift(1))
-            df[column_name] = df_temp['LOGRET_1'].rolling(window=horizon).sum().shift(-horizon)
-            target_column_names.append(column_name)
-                
-        return df, target_column_names
     
     def split_data(self, df: pd.DataFrame, val_start_timestamp, test_start_timestamp, target_column_names: list[str] = []) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """

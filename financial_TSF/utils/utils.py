@@ -30,6 +30,8 @@ def plot_learning_curve(train_losses, val_losses, model_name="Model", save_path:
     else:
         plt.show()
 
+def get_target_column_names(forecast_horizons: list[int]) -> list[str]:
+    return [f"target_{horizon}" for horizon in forecast_horizons]
 
 def print_target_diagnostics(y_train: pd.DataFrame) -> None:
     y_np = y_train.to_numpy()
