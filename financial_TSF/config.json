@@ -1,14 +1,14 @@
 {
     "data": {
         "concatenated_csv": "data/concatenated/",
-        "number_of_tickers": 1,
+        "number_of_tickers": 11,
         "start_date": "2015-01-01",
-        "end_date": "2018-12-31",
+        "end_date": "2023-12-31",
         "use_cached_processed_data": false,
         "processed_csv": "data/processed/"
     },
     "model": {
-        "modelType": "PatchTST"
+        "modelType": "LinearRegression"
     },
     "features": {
         "featureConfigPath": "financial_TSF/features/feature_config.json",
@@ -33,11 +33,14 @@
         "use_winsorizing": true
     },
     "results": {
-        "resultsPath": "resultsTraining/"
+        "resultsPath": "results/final/"
     },
     "settings": {
         "forecast_horizon": [
-            24
+            6,
+            12,
+            24,
+            48
         ]
     }
 }

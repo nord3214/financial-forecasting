@@ -114,50 +114,50 @@ class ScalingStep(PipelineStep):
                 step_result.split_data[idx]['y_scaler'] = y_scaler
                 # self.show_statistics(step_result.split_data[idx]['X_train'], step_result.split_data[idx]['X_val'], step_result.split_data[idx]['X_test'])
                 
-                # ----- VALIDATION LOGGING: Index alignment and column preservation -----
-                ticker_name = split_data.get("ticker_name", f"Ticker_{idx}")
-                print(f"\n[ScalingStep] Validation for '{ticker_name}':")
+                # # ----- VALIDATION LOGGING: Index alignment and column preservation -----
+                # ticker_name = split_data.get("ticker_name", f"Ticker_{idx}")
+                # print(f"\n[ScalingStep] Validation for '{ticker_name}':")
                 
-                # Check X columns preserved
-                if set(split_data['X_train'].columns) != set(step_result.split_data[idx]['X_train'].columns):
-                    print(f"  ERROR: X_train columns changed!")
-                    print(f"    Before: {sorted(split_data['X_train'].columns.tolist())}")
-                    print(f"    After: {sorted(step_result.split_data[idx]['X_train'].columns.tolist())}")
-                else:
-                    print(f"  OK: X column order preserved ({len(x_cols)} features)")
+                # # Check X columns preserved
+                # if set(split_data['X_train'].columns) != set(step_result.split_data[idx]['X_train'].columns):
+                #     print(f"  ERROR: X_train columns changed!")
+                #     print(f"    Before: {sorted(split_data['X_train'].columns.tolist())}")
+                #     print(f"    After: {sorted(step_result.split_data[idx]['X_train'].columns.tolist())}")
+                # else:
+                #     print(f"  OK: X column order preserved ({len(x_cols)} features)")
                 
-                # Check y columns preserved
-                if set(split_data['y_train'].columns) != set(step_result.split_data[idx]['y_train'].columns):
-                    print(f"  ERROR: y_train columns changed!")
-                else:
-                    print(f"  OK: y column order preserved ({len(y_cols)} targets)")
+                # # Check y columns preserved
+                # if set(split_data['y_train'].columns) != set(step_result.split_data[idx]['y_train'].columns):
+                #     print(f"  ERROR: y_train columns changed!")
+                # else:
+                #     print(f"  OK: y column order preserved ({len(y_cols)} targets)")
                 
-                # Check index alignment by length
-                x_train_len = len(step_result.split_data[idx]['X_train'])
-                y_train_len = len(step_result.split_data[idx]['y_train'])
-                x_val_len = len(step_result.split_data[idx]['X_val'])
-                y_val_len = len(step_result.split_data[idx]['y_val'])
-                x_test_len = len(step_result.split_data[idx]['X_test'])
-                y_test_len = len(step_result.split_data[idx]['y_test'])
+                # # Check index alignment by length
+                # x_train_len = len(step_result.split_data[idx]['X_train'])
+                # y_train_len = len(step_result.split_data[idx]['y_train'])
+                # x_val_len = len(step_result.split_data[idx]['X_val'])
+                # y_val_len = len(step_result.split_data[idx]['y_val'])
+                # x_test_len = len(step_result.split_data[idx]['X_test'])
+                # y_test_len = len(step_result.split_data[idx]['y_test'])
                 
-                print(f"  Index structure (may differ):")
-                print(f"    X_train: {type(step_result.split_data[idx]['X_train'].index).__name__}")
-                print(f"    y_train: {type(step_result.split_data[idx]['y_train'].index).__name__}")
+                # print(f"  Index structure (may differ):")
+                # print(f"    X_train: {type(step_result.split_data[idx]['X_train'].index).__name__}")
+                # print(f"    y_train: {type(step_result.split_data[idx]['y_train'].index).__name__}")
                 
-                if x_train_len != y_train_len:
-                    print(f"  ERROR: X_train length ({x_train_len}) != y_train length ({y_train_len})")
-                else:
-                    print(f"  OK: X_train and y_train lengths match ({x_train_len})")
+                # if x_train_len != y_train_len:
+                #     print(f"  ERROR: X_train length ({x_train_len}) != y_train length ({y_train_len})")
+                # else:
+                #     print(f"  OK: X_train and y_train lengths match ({x_train_len})")
                     
-                if x_val_len != y_val_len:
-                    print(f"  ERROR: X_val length ({x_val_len}) != y_val length ({y_val_len})")
-                else:
-                    print(f"  OK: X_val and y_val lengths match ({x_val_len})")
+                # if x_val_len != y_val_len:
+                #     print(f"  ERROR: X_val length ({x_val_len}) != y_val length ({y_val_len})")
+                # else:
+                #     print(f"  OK: X_val and y_val lengths match ({x_val_len})")
                     
-                if x_test_len != y_test_len:
-                    print(f"  ERROR: X_test length ({x_test_len}) != y_test length ({y_test_len})")
-                else:
-                    print(f"  OK: X_test and y_test lengths match ({x_test_len})")
+                # if x_test_len != y_test_len:
+                #     print(f"  ERROR: X_test length ({x_test_len}) != y_test length ({y_test_len})")
+                # else:
+                #     print(f"  OK: X_test and y_test lengths match ({x_test_len})")
             
             
         x_train_scaled = [split['X_train'] for split in step_result.split_data]

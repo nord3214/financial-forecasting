@@ -35,13 +35,13 @@ class PortfolioOptimizer:
             target_horizon.index = target_horizon.index.droplevel(1)
             series_list.append(target_horizon)
             
-            print(f"ticker: {ticker}, target_horizon shape: {target_horizon.shape}")
+            # print(f"ticker: {ticker}, target_horizon shape: {target_horizon.shape}")
 
         # :TODO does inner join makes sense here?
         targets = pd.concat(series_list, axis=1, join='inner')
         targets = targets.iloc[::horizon]
             
-        print(f"final prediction length: {targets.shape[0]}")
+        # print(f"final prediction length: {targets.shape[0]}")
             
         return targets
     

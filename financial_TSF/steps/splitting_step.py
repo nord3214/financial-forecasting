@@ -106,28 +106,29 @@ class SplittingStep(PipelineStep):
                     data["y_test"] = y_test
                     break
             
-            # ------ VALIDATION: Split timestamps and sizes ----- 
-            print(f"\n[SplittingStep] Validation for ticker '{ticker_name}':")
-            print(f"  X_train shape: {X_train.shape}, dates: {X_train.index.min()} to {X_train.index.max()}")
-            print(f"  X_val shape: {X_val.shape}, dates: {X_val.index.min()} to {X_val.index.max()}")
-            print(f"  X_test shape: {X_test.shape}, dates: {X_test.index.min()} to {X_test.index.max()}")
-            print(f"  y_train shape: {y_train.shape}, dates: {y_train.index.min()} to {y_train.index.max()}")
-            print(f"  y_val shape: {y_val.shape}, dates: {y_val.index.min()} to {y_val.index.max()}")
-            print(f"  y_test shape: {y_test.shape}, dates: {y_test.index.min()} to {y_test.index.max()}")
+            # # ------ VALIDATION: Split timestamps and sizes ----- 
+            # print(f"\n[SplittingStep] Validation for ticker '{ticker_name}':")
+            # print(f"  X_train shape: {X_train.shape}, dates: {X_train.index.min()} to {X_train.index.max()}")
+            # print(f"  X_val shape: {X_val.shape}, dates: {X_val.index.min()} to {X_val.index.max()}")
+            # print(f"  X_test shape: {X_test.shape}, dates: {X_test.index.min()} to {X_test.index.max()}")
+            # print(f"  y_train shape: {y_train.shape}, dates: {y_train.index.min()} to {y_train.index.max()}")
+            # print(f"  y_val shape: {y_val.shape}, dates: {y_val.index.min()} to {y_val.index.max()}")
+            # print(f"  y_test shape: {y_test.shape}, dates: {y_test.index.min()} to {y_test.index.max()}")
             
-            # Check lengths match
-            if X_train.shape[0] != y_train.shape[0]:
-                print(f"  ERROR: X_train and y_train row counts differ ({X_train.shape[0]} vs {y_train.shape[0]})")
-            if X_val.shape[0] != y_val.shape[0]:
-                print(f"  ERROR: X_val and y_val row counts differ ({X_val.shape[0]} vs {y_val.shape[0]})")
-            if X_test.shape[0] != y_test.shape[0]:
-                print(f"  ERROR: X_test and y_test row counts differ ({X_test.shape[0]} vs {y_test.shape[0]})")
+            # # Check lengths match
+            # if X_train.shape[0] != y_train.shape[0]:
+            #     print(f"  ERROR: X_train and y_train row counts differ ({X_train.shape[0]} vs {y_train.shape[0]})")
+            # if X_val.shape[0] != y_val.shape[0]:
+            #     print(f"  ERROR: X_val and y_val row counts differ ({X_val.shape[0]} vs {y_val.shape[0]})")
+            # if X_test.shape[0] != y_test.shape[0]:
+            #     print(f"  ERROR: X_test and y_test row counts differ ({X_test.shape[0]} vs {y_test.shape[0]})")
         
         # eda = FinancialEDA(None, output_path="plots/eda/splitting_step/")
         # eda.plot_split_points(step_result.data, val_start_timestamp, test_start_timestamp)
                 
         # remove tickers with insufficient data from step_result        
         if tickers_to_remove:
+            print(f"Removing {len(tickers_to_remove)} tickers with insufficient data: {tickers_to_remove}")
             step_result.ticker_names = [t for t in step_result.ticker_names if t not in tickers_to_remove]
             step_result.split_data = [data for data in step_result.split_data if data["ticker_name"] not in tickers_to_remove]
             

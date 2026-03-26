@@ -14,9 +14,10 @@ class GraphVisualization:
     def __init__(self, config: AppConfig, step_result: StepResult):
         self.config = config
         self.step_result = step_result
+        self.idx_of_ticker_to_plot = 0
 
         self.primary_color   = '#1a4a73'   # Navy  – actual values
-        self.secondary_color = '#e07b39'   # Orange – predicted values
+        self.secondary_color = "#dd6f25"   # Orange – predicted values
         self.output_path = get_result_path(config, step_result) / "plots" / "predictions"
         self.output_path.mkdir(parents=True, exist_ok=True)
         self._apply_global_style()
@@ -48,7 +49,7 @@ class GraphVisualization:
         Plots the first x days of actual vs. predicted return for the
         first horizon and the first ticker in split_data.
         """
-        split     = self.step_result.split_data[0]
+        split     = self.step_result.split_data[self.idx_of_ticker_to_plot]
         y_test    = split["y_test"]
         y_pred    = split["y_test_pred"]
         cols      = y_test.columns   # last horizon column when using all from thesis lockback window = 48
@@ -99,9 +100,46 @@ class GraphVisualization:
             plt.close()
             print(f"[GraphVisualization] Saved weekly predictions plot -> {save_path}")
 
+    def visualize_prediction_scatter(self):
+        """Plots predicted returns against ground truth returns for each horizon."""
+        split  = self.step_result.split_data[self.idx_of_ticker_to_plot]
+        y_test = split["y_test"]
+        y_pred = split["y_test_pred"]
+
+        for col in y_test.columns:
+            actual = y_test[col].to_numpy()
+            predicted = y_pred[col].to_numpy()
+            
+            lower = min(actual.min(), predicted.min())
+            upper = max(actual.max(), predicted.max())
+            pad = (upper - lower) * 0.05 if upper > lower else 1e-6
+
+            horizon = col.split("_")[-1]
+            graph_title = f"Predicted vs Ground Truth ({horizon}-Intervals)"
+
+            fig, ax = plt.subplots(figsize=(6, 6))
+            ax.scatter(actual, predicted, label='Predictions', color=self.secondary_color)
+            ax.plot([lower - pad, upper + pad], [lower - pad, upper + pad], color=self.primary_color
+                    , linestyle='--', label='Perfect Prediction')
+
+            ax.set_xlim(lower - pad, upper + pad)
+            ax.set_ylim(lower - pad, upper + pad)
+            # ax.set_aspect('equal', adjustable='box')
+            ax.set_title(graph_title)
+            ax.set_xlabel("Ground Truth Log-return")
+            ax.set_ylabel("Predicted Log-return")
+            ax.legend(loc="upper left")
+
+            plt.tight_layout()
+            save_path = self.output_path / f"scatter_predictions_{col}.pdf"
+            plt.savefig(save_path)
+            plt.close()
+            print(f"[GraphVisualization] Saved prediction scatter plot -> {save_path}")
+
 
 
     def run(self):
         """Generate all prediction visualizations."""
         self.visualize_weekly_predictions()
+        self.visualize_prediction_scatter()
 
