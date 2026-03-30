@@ -26,12 +26,13 @@ PATCHTST_PARAMS: dict[str, Any] = {
     "num_attention_heads": 4,
     "num_hidden_layers": 3,
     "ffn_dim": 128,
-    "dropout": 0.003,
-    "head_dropout": 0.002,
+    "dropout": 0.3,
+    "head_dropout": 0.2,
     "weight_decay": 1e-4,       # L2 regularization
     "batch_size": 64,
     "lr": 5e-4,
-    "num_epochs": 300,
+    "num_epochs": 300,  
+    
     "patience": 30,              # early-stopping patience (epochs)
 }
 

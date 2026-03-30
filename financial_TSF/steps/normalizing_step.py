@@ -11,6 +11,8 @@ class ScalingStep(PipelineStep):
         self.config = config
         self.use_winsorizing = config.pipeline.use_winsorizing
         self.use_scaling = config.pipeline.use_scaling
+        self.use_ticker_one_hot = True
+        self.ticker_ohe_prefix = "ticker_ohe_"
         self.winsorize_quantile_X = 0.01
         self.winsorize_quantile_y = 0.005
 
@@ -72,19 +74,34 @@ class ScalingStep(PipelineStep):
         # x_train_scaled = [split['X_train'] for split in step_result.split_data]
         # visualizer = FeatureVisualization(x_train_scaled, folder=f'boxplots/winsorized_{self.winsorize_quantile_X*100}_percentiles')
         # visualizer.run()
+
+        ticker_ohe_columns = []
+        if self.use_ticker_one_hot:
+            ticker_ohe_columns = [f"{self.ticker_ohe_prefix}{ticker}" for ticker in step_result.ticker_names]
         
         for idx, split_data in enumerate(step_result.split_data):
             if not self.use_winsorizing:
                 split_data['X_train'].set_index('ticker', append=True, inplace=True)
                 split_data['X_val'].set_index('ticker', append=True, inplace=True)
                 split_data['X_test'].set_index('ticker', append=True, inplace=True)
+
+            if self.use_ticker_one_hot:
+                ticker_name = split_data.get('ticker_name', None)
+                split_data['X_train'] = self.add_ticker_one_hot(split_data['X_train'], ticker_name, ticker_ohe_columns)
+                split_data['X_val'] = self.add_ticker_one_hot(split_data['X_val'], ticker_name, ticker_ohe_columns)
+                split_data['X_test'] = self.add_ticker_one_hot(split_data['X_test'], ticker_name, ticker_ohe_columns)
                 
             if self.use_scaling:
             
                 x_scaler = self.get_scaler()
                 y_scaler = self.get_scaler()
-                
-                x_scaler.fit(split_data['X_train'])
+
+                if self.use_ticker_one_hot and ticker_ohe_columns:
+                    numeric_x_cols = [col for col in split_data['X_train'].columns if col not in ticker_ohe_columns]
+                else:
+                    numeric_x_cols = split_data['X_train'].columns.tolist()
+
+                x_scaler.fit(split_data['X_train'][numeric_x_cols])
                 y_scaler.fit(split_data['y_train'])
                 # x_scaler.fit(pd.concat([split_data['X_train'], split_data['X_val']]))
                 # y_scaler.fit(pd.concat([split_data['y_train'], split_data['y_val']]))
@@ -93,18 +110,30 @@ class ScalingStep(PipelineStep):
                 x_cols = split_data['X_train'].columns
                 y_cols = split_data['y_train'].columns
 
-                x_train_raw = x_scaler.transform(split_data['X_train'])
-                x_val_raw = x_scaler.transform(split_data['X_val'])
-                x_test_raw = x_scaler.transform(split_data['X_test'])
+                x_train_num = x_scaler.transform(split_data['X_train'][numeric_x_cols])
+                x_val_num = x_scaler.transform(split_data['X_val'][numeric_x_cols])
+                x_test_num = x_scaler.transform(split_data['X_test'][numeric_x_cols])
                 y_train_raw = y_scaler.transform(split_data['y_train'])
                 y_val_raw = y_scaler.transform(split_data['y_val'])
                 y_test_raw = y_scaler.transform(split_data['y_test'])
                 
                 
                 # Convert back to DataFrames with original Index and Column names
-                step_result.split_data[idx]['X_train'] = pd.DataFrame(x_train_raw, columns=x_cols, index=split_data['X_train'].index)
-                step_result.split_data[idx]['X_val'] = pd.DataFrame(x_val_raw, columns=x_cols, index=split_data['X_val'].index)
-                step_result.split_data[idx]['X_test'] = pd.DataFrame(x_test_raw, columns=x_cols, index=split_data['X_test'].index)
+                x_train_scaled_df = pd.DataFrame(x_train_num, columns=numeric_x_cols, index=split_data['X_train'].index)
+                x_val_scaled_df = pd.DataFrame(x_val_num, columns=numeric_x_cols, index=split_data['X_val'].index)
+                x_test_scaled_df = pd.DataFrame(x_test_num, columns=numeric_x_cols, index=split_data['X_test'].index)
+
+                if self.use_ticker_one_hot and ticker_ohe_columns:
+                    x_train_scaled_df = pd.concat([x_train_scaled_df, split_data['X_train'][ticker_ohe_columns]], axis=1)
+                    x_val_scaled_df = pd.concat([x_val_scaled_df, split_data['X_val'][ticker_ohe_columns]], axis=1)
+                    x_test_scaled_df = pd.concat([x_test_scaled_df, split_data['X_test'][ticker_ohe_columns]], axis=1)
+                    x_train_scaled_df = x_train_scaled_df[x_cols]
+                    x_val_scaled_df = x_val_scaled_df[x_cols]
+                    x_test_scaled_df = x_test_scaled_df[x_cols]
+
+                step_result.split_data[idx]['X_train'] = x_train_scaled_df
+                step_result.split_data[idx]['X_val'] = x_val_scaled_df
+                step_result.split_data[idx]['X_test'] = x_test_scaled_df
                 # add index from X because it also has the ticker in index
                 step_result.split_data[idx]['y_train'] = pd.DataFrame(y_train_raw, columns=y_cols, index=split_data['X_train'].index)
                 step_result.split_data[idx]['y_val'] = pd.DataFrame(y_val_raw, columns=y_cols, index=split_data['X_val'].index)
@@ -112,6 +141,7 @@ class ScalingStep(PipelineStep):
                 
                 step_result.split_data[idx]['x_scaler'] = x_scaler
                 step_result.split_data[idx]['y_scaler'] = y_scaler
+
                 # self.show_statistics(step_result.split_data[idx]['X_train'], step_result.split_data[idx]['X_val'], step_result.split_data[idx]['X_test'])
                 
                 # # ----- VALIDATION LOGGING: Index alignment and column preservation -----
@@ -229,6 +259,18 @@ class ScalingStep(PipelineStep):
         # scaler = StandardScaler()
         scaler = RobustScaler()
         return scaler
+
+    def add_ticker_one_hot(self, df: DataFrame, ticker_name: str | None, all_ohe_columns: list[str]) -> DataFrame:
+        if not all_ohe_columns:
+            return df
+
+        ohe_values = {col: 0 for col in all_ohe_columns}
+        ticker_col = f"{self.ticker_ohe_prefix}{ticker_name}"
+        if ticker_name is not None and ticker_col in ohe_values:
+            ohe_values[ticker_col] = 1
+
+        ohe_df = pd.DataFrame(ohe_values, index=df.index)
+        return pd.concat([df, ohe_df], axis=1)
     
     def perform_standard_scaling(self, df: DataFrame) -> DataFrame:
         scaler = StandardScaler()
