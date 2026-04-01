@@ -1,0 +1,79 @@
+@startuml FinancialTSF_Minimal_Architecture
+title Financial TSF - Minimal Architecture Diagram
+
+skinparam style strictuml
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+top to bottom direction
+
+skinparam class {
+  BackgroundColor White
+  BorderColor #424242
+  ArrowColor #363636
+}
+
+skinparam classBackgroundColor<<abstract>> #FFFFEF
+skinparam classBackgroundColor<<pipeline>> #EEF6FF
+skinparam classBackgroundColor<<step>> #F2FBFF
+skinparam classBackgroundColor<<model>> #F4FFF0
+
+class Pipeline <<pipeline>> {
+  -config: AppConfig
+  -model: BaseModel
+  -steps: list[PipelineStep]
+  +run(step_result: StepResult): StepResult
+}
+
+class AppConfig <<datamodel>> {
+  +data: DataConfig
+  +model: ModelConfig
+  +features: FeaturesConfig
+  ...
+  +pipeline: PipelineConfig
+}
+
+abstract class PipelineStep <<abstract>> {
+  {abstract} +execute(step_result: StepResult): 
+}
+
+abstract class BaseModel <<abstract>> {
+  {abstract} +fit(step_result: StepResult): 
+  {abstract} +predict(step_result: StepResult): 
+  {abstract} +tune_hyperparameters(step_result: StepResult):
+  {abstract} +save_model(step_result: StepResult):
+  {abstract} +load_model(step_result: StepResult):
+}
+
+class DataLoadingStep <<step>>
+class FeatureStep <<step>>
+class SplittingStep <<step>>
+class ScalingStep <<step>>
+class TrainingStep <<step>>
+class EvaluationStep <<step>>
+class SavingStep <<step>>
+
+class LinearRegressionModel <<model>>
+class RandomForestModel <<model>>
+class MLPModel <<model>>
+class PatchTSTWrapper <<model>>
+class NaiveModel <<model>>
+
+Pipeline *-- BaseModel
+Pipeline *-- PipelineStep
+Pipeline --> AppConfig : loads
+
+PipelineStep <|-- DataLoadingStep
+PipelineStep <|-- FeatureStep
+PipelineStep <|-- SplittingStep
+PipelineStep <|-- ScalingStep
+PipelineStep <|-- TrainingStep
+PipelineStep <|-- EvaluationStep
+PipelineStep <|-- SavingStep
+
+BaseModel <|-- LinearRegressionModel
+BaseModel <|-- RandomForestModel
+BaseModel <|-- MLPModel
+BaseModel <|-- PatchTSTWrapper
+BaseModel <|-- NaiveModel
+
+@enduml
