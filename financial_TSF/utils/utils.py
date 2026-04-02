@@ -10,7 +10,7 @@ from financial_TSF.data_models.step_datamodel import StepResult
 
 
 
-def plot_learning_curve(train_losses, val_losses, model_name="Model", save_path: Path | None = None, xlabel: str = "Epochs", x_values=None) -> None:
+def plot_learning_curve(train_losses, val_losses, model_name="Model", save_path: Path | None = None, xlabel: str = "Epochs", x_values=None, iteration: int | None = None) -> None:
     x = x_values if x_values is not None else range(1, len(train_losses) + 1)
     plt.figure(figsize=(10, 6), dpi=100)
     plt.plot(x, train_losses, 'b-', label='Training Loss', linewidth=2)
@@ -25,7 +25,10 @@ def plot_learning_curve(train_losses, val_losses, model_name="Model", save_path:
     if save_path:
         save_path = save_path / "plots"
         save_path.mkdir(parents=True, exist_ok=True)
-        plt.savefig(save_path / f'{model_name}_learning_curve.png', dpi=100)
+        if iteration is not None:
+            plt.savefig(save_path / f'{model_name}_learning_curve_iter{iteration}.pdf', dpi=100)
+        else:
+            plt.savefig(save_path / f'{model_name}_learning_curve.pdf', dpi=100)
         plt.close()
     else:
         plt.show()
@@ -87,9 +90,11 @@ def get_result_path(config: AppConfig, step_result: StepResult)-> Path:
     
     return run_dir
 
-def save_param_dict(params: dict, config: AppConfig, step_result: StepResult) -> None:
+def save_param_dict(params: dict, config: AppConfig, step_result: StepResult, iteration: int|None = None) -> None:
     save_path = get_result_path(config, step_result)
     param_file = save_path / "params.txt"
+    if iteration is not None:
+        param_file = save_path / f"params_iter{iteration}.txt"
     with open(param_file, "w") as f:
         for key, value in params.items():
             f.write(f"{key}: {value}\n")

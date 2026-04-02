@@ -25,9 +25,11 @@ class MLPModel(BaseModel):
         self.hidden_layers = model_config.get("hidden_layers", [64, 32])
         self.dropout = model_config.get("dropout", 0.2)
         self.lr = model_config.get("lr", 0.001)
+        self.weight_decay = model_config.get("weight_decay", 1e-4)
         self.batch_size = model_config.get("batch_size", 64)
         self.patience = model_config.get("patience", 30) # for early stopping
-        
+        self.iteration = 0
+        self.model_config = model_config
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f"Using device: {self.device} for training")
 
@@ -35,7 +37,7 @@ class MLPModel(BaseModel):
     def fit(self, step_result: StepResult, refit: bool = True):
         
         
-        save_param_dict(MODEL_PARAMS, self.config, step_result )
+        save_param_dict(self.model_config, self.config, step_result, iteration=self.iteration)
         
         train_losses = []
         val_losses = []
@@ -55,7 +57,11 @@ class MLPModel(BaseModel):
             dropout_rate=self.dropout)
         self.model.to(self.device) # move model to device (gpu)
         
-        optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr, weight_decay=1e-4)
+        optimizer = torch.optim.Adam(
+            self.model.parameters(),
+            lr=self.lr,
+            weight_decay=self.weight_decay,
+        )
         # loss_fn = nn.MSELoss()
         loss_fn = nn.L1Loss() # MAE - more robust to outliers in financial returns
         # loss_fn = nn.HuberLoss()
@@ -160,7 +166,7 @@ class MLPModel(BaseModel):
             )
             self.model.to(self.device)
             optimizer_refit = torch.optim.Adam(
-                self.model.parameters(), lr=self.lr, weight_decay=1e-5
+                self.model.parameters(), lr=self.lr, weight_decay=self.weight_decay
             )
 
             for ep in range(best_epoch):
@@ -181,7 +187,7 @@ class MLPModel(BaseModel):
             print("[MLP] Refit complete.")
         save_path = get_result_path(self.config, step_result)
             
-        plot_learning_curve(train_losses, val_losses, model_name="MLP", save_path=save_path)
+        plot_learning_curve(train_losses, val_losses, model_name="MLP", save_path=save_path, iteration=self.iteration)
         
         self.save_model(step_result)
 
@@ -222,10 +228,11 @@ class MLPModel(BaseModel):
         print("[MLP] Starting hyperparameter tuning with validation set...")
 
         param_grid = {
-            "hidden_layers": [[256, 256, 128, 64], [256, 256, 128], [256, 128, 64],
+            "hidden_layers": [[512, 256, 128, 64], [256, 256, 128, 64], [256, 256, 128], [256, 128, 64],
                               [128, 64, 32], [512, 256, 128], [128, 128]],
-            "dropout": [0.1, 0.2, 0.3, 0.5],
+            "dropout": [0.1, 0.2, 0.3, 0.5, 0.6, 0.7, 0.8],
             "lr": [1e-3, 5e-4, 1e-4],
+            "weight_decay": [0.0, 1e-5, 1e-4, 1e-3],
             "batch_size": [64, 128, 256, 512,],
         }
 
@@ -239,13 +246,15 @@ class MLPModel(BaseModel):
                 "hidden_layers": random.choice(param_grid["hidden_layers"]),
                 "dropout":       random.choice(param_grid["dropout"]),
                 "lr":            random.choice(param_grid["lr"]),
+                "weight_decay":  random.choice(param_grid["weight_decay"]),
                 "batch_size":    random.choice(param_grid["batch_size"]),
-                "patience":      10,
+                "patience":      40,
             }
 
             print(f"\n  [{i+1:>2}/{n_iter}] Config: {model_config}")
 
             candidate = MLPModel(self.config, model_config=model_config)
+            candidate.iteration = i
             val_loss = candidate.fit(step_result, refit=False)
             print(f"  [{i+1:>2}/{n_iter}] val_loss={val_loss:.6f}")
             all_trials.append({"params": model_config, "val_loss": val_loss})
@@ -261,6 +270,7 @@ class MLPModel(BaseModel):
         self.hidden_layers = best_config["hidden_layers"]
         self.dropout       = best_config["dropout"]
         self.lr            = best_config["lr"]
+        self.weight_decay  = best_config["weight_decay"]
         self.batch_size    = best_config["batch_size"]
 
         save_tuning_results(all_trials, best_config, "MLP", self.config, step_result)
@@ -279,8 +289,8 @@ class MLPModel(BaseModel):
         print(f"[MLP] Model saved to {result_dir}")
         return result_dir
 
-    def load_model(self, path: Path) -> None:
-        checkpoint = torch.load(path, weights_only=True)
+    def load_model(self, model_path: Path) -> None:
+        checkpoint = torch.load(model_path, weights_only=True)
         self.model = DynamicMLP(
             input_dim=checkpoint["input_dim"],
             output_dim=self.output_dim,       # already in self from __init__
@@ -290,7 +300,7 @@ class MLPModel(BaseModel):
         self.model.load_state_dict(checkpoint["state_dict"])
         self.model.to(self.device)
         self.model.eval()
-        print(f"[MLP] Model loaded from {path}")
+        print(f"[MLP] Model loaded from {model_path}")
 
 
 class DynamicMLP(nn.Module):

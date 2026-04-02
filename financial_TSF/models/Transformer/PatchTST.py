@@ -32,7 +32,6 @@ PATCHTST_PARAMS: dict[str, Any] = {
     "batch_size": 64,
     "lr": 5e-4,
     "num_epochs": 300,  
-    
     "patience": 30,              # early-stopping patience (epochs)
 }
 
@@ -136,6 +135,7 @@ class PatchTSTWrapper(BaseModel):
     def __init__(self, config: AppConfig, model_config: dict | None = None):
         self.config = config
         mc = model_config or PATCHTST_PARAMS
+        self.iteration = 0
 
         
         self.num_targets: int = len(config.settings.forecast_horizon)
@@ -308,7 +308,7 @@ class PatchTSTWrapper(BaseModel):
         
         # param_dict is all class attributs self.mc only the init
         param_dict: dict[str, Any] = patchtst_cfg.__dict__
-        save_param_dict(self.mc, self.config, step_result)
+        save_param_dict(self.mc, self.config, step_result, iteration=self.iteration)
 
         # ── optimiser & loss ────────────────────────────────────────────
         optimizer = torch.optim.AdamW(
@@ -394,7 +394,7 @@ class PatchTSTWrapper(BaseModel):
         print(f"[PatchTST] Training complete. Best val loss: {best_val_loss:.6f}")
 
         save_path = get_result_path(self.config, step_result)
-        plot_learning_curve(train_losses, val_losses, model_name="PatchTST", save_path=save_path)
+        plot_learning_curve(train_losses, val_losses, model_name="PatchTST", save_path=save_path, iteration=self.iteration)
 
         if refit:
             # final refit on combined train+val
@@ -516,20 +516,20 @@ class PatchTSTWrapper(BaseModel):
 def run_hyperparameter_tuning(pipeline_config: AppConfig, step_result: StepResult) -> dict:
     # define search space
     param_grid = {
-        "context_length": [64, 128, 256],
+        "context_length": [32, 64, 128],
         "patch_length": [8, 16],
         "patch_stride": [4, 8],
-        "d_model": [64, 128],
+        "d_model": [32, 64, 128],
         "num_attention_heads": [2, 4, 8],
         "num_hidden_layers": [2, 3, 4],
-        "ffn_dim": [128, 256],
-        "dropout": [0.1, 0.2, 0.3],
-        "head_dropout": [0.05, 0.1, 0.2],
-        "weight_decay": [1e-5, 1e-4, 5e-4, 1e-3],
+        "ffn_dim": [64, 128],
+        "dropout": [0.1, 0.3, 0.4, 0.5, 0.6, 0.7,0.8],
+        "head_dropout": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6],
+        "weight_decay": [1e-4, 5e-4, 1e-3, 1e-2],
         "batch_size": [32, 64],
         "lr": [1e-4, 3e-4],
-        "num_epochs": [40, 50],
-        "patience": [6, 8, 10, 12],
+        "num_epochs": [30],
+        "patience": [15]
     }
 
     best_loss = float("inf")
@@ -565,6 +565,7 @@ def run_hyperparameter_tuning(pipeline_config: AppConfig, step_result: StepResul
         print(f"Testing Config {i}: {model_config}")
 
         model = PatchTSTWrapper(pipeline_config, model_config=model_config)
+        model.iteration = i
         final_val_loss = model.fit(step_result, refit=False)
         print(f"Validation Loss for Config {i}: {final_val_loss}")
         all_trials.append({"params": model_config, "val_loss": final_val_loss})

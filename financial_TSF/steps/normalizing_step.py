@@ -11,7 +11,7 @@ class ScalingStep(PipelineStep):
         self.config = config
         self.use_winsorizing = config.pipeline.use_winsorizing
         self.use_scaling = config.pipeline.use_scaling
-        self.use_ticker_one_hot = True
+        self.use_ticker_one_hot = False
         self.ticker_ohe_prefix = "ticker_ohe_"
         self.winsorize_quantile_X = 0.01
         self.winsorize_quantile_y = 0.005
