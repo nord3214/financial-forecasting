@@ -1,0 +1,8 @@
+Parameter name;Tuningspace;best parameters L1;best parameters L2;best parameters L3;best parameters L4;best parameters L5;best parameters L6;best parameters L7;
+Number of estimators;[100, 200, 300, 500];200;200;200;200;200;200;200;200
+Maximum tree depth;[10, 15, 20, 30, None];15;15;15;15;15;15;15;15
+Minimum samples leaf;[10, 20, 40, 60, 100];20;20;20;20;20;20;20;20
+Minimum samples split;[2, 5, 10, 20];5;5;5;5;5;5;5;5
+Maximum features;"[""sqrt"", ""log2"", 0.3, 0.5, None]";0.3;0.4;0.5;0.6;0.7;0.8;0.9;0.10
+Split criterion;no search applied;MSE;MSE;MSE;MSE;MSE;MSE;MSE;MSE
+Loss function;no search applied;MSE;MSE;MSE;MSE;MSE;MSE;MSE;MSE

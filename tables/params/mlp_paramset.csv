@@ -1,0 +1,8 @@
+﻿Parameter name;Tuningspace;best parameters L1;best parameters L2;best parameters L3;best parameters L4;best parameters L5;best parameters L6;best parameters L7;
+hidden layers;[[512, 256, 128, 64], [256, 256, 128, 64], [256, 256, 128], [256, 128, 64], 128, 64, 32], [512, 256, 128], [128, 128]];[512, 256, 128, 64];[512, 256, 128, 64];[512, 256, 128, 64];[512, 256, 128, 64];[512, 256, 128, 64];[512, 256, 128, 64];[512, 256, 128, 64];[512, 256, 128, 64]
+dropout;[0.1, 0.2, 0.3, 0.5, 0.6, 0.7, 0.8];0.2;0.3;0.3;0.2;0.2;0.2;0.3;0.4
+learning rate;[1e-3, 5e-4, 1e-4];5,00E-04;1,00E-04;1,00E-04;5,00E-04;5,00E-04;1,00E-04;1,00E-04;5,00E-04
+batch size;[64, 128, 256, 512];64;128;192;256;320;384;448;512
+patience;no search applied;30;30;30;30;30;30;30;30
+loss function ;no search applied;L1 loss - MAE;L1 loss - MAE;L1 loss - MAE;L1 loss - MAE;L1 loss - MAE;L1 loss - MAE;L1 loss - MAE;L1 loss - MAE
+weight decay;[0.0, 1e-5, 1e-4, 1e-3];0,0001;0,0001;0,0001;0,0001;0,0001;0,0001;0,0001;0,0001

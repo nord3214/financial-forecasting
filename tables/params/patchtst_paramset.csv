@@ -1,0 +1,15 @@
+Parameter name;Tuningspace;best parameters L1;best parameters L2;best parameters L3;best parameters L4;best parameters L5;best parameters L6;best parameters L7
+Context length;[32, 64, 128];64;64;64;64;64;64;64
+Patch length;[8, 16];8;8;8;8;8;8;8
+Patch stride;[4, 8];4;4;4;4;4;4;4
+Model dimension;[32, 64, 128];32;32;32;32;32;32;32
+Number of attention heads;[2, 4, 8];4;4;4;4;4;4;4
+Number of hidden layers;[2, 3, 4];3;3;3;3;3;3;3
+FFN dimension;[64, 128];64;64;64;64;64;64;64
+Dropout;[0.1, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8];0.3;0.3;0.3;0.3;0.3;0.3;0.3
+Head dropout;[0.1, 0.2, 0.3, 0.4, 0.5, 0.6];0.2;0.2;0.2;0.2;0.2;0.2;0.2
+Weight decay;[1e-4, 5e-4, 1e-3, 1e-2];1,00E-04;1,00E-04;1,00E-04;1,00E-04;1,00E-04;1,00E-04;1,00E-04
+Batch size;[32, 64];32;32;32;32;32;32;32
+Learning rate;[1e-4, 3e-4];1,00E-04;1,00E-04;1,00E-04;1,00E-04;1,00E-04;1,00E-04;1,00E-04
+Patience;no search applied;15;15;15;15;15;15;15
+Loss function;no search applied;MAE;MAE;MAE;MAE;MAE;MAE;MAE
