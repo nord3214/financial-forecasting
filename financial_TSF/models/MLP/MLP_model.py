@@ -235,6 +235,14 @@ class MLPModel(BaseModel):
             "weight_decay": [0.0, 1e-5, 1e-4, 1e-3],
             "batch_size": [64, 128, 256, 512,],
         }
+        
+        # param_grid = {
+        #     "hidden_layers": [[512, 256, 128]],
+        #     "dropout": [0.1, 0.2, 0.3, 0.5, 0.6, 0.7, 0.8],
+        #     "lr": [0.001],
+        #     "weight_decay": [0.0, 1e-5, 1e-4, 1e-3, 1e-2],
+        #     "batch_size": [256],
+        # }
 
         n_iter = 10
         best_loss = float("inf")
@@ -248,7 +256,7 @@ class MLPModel(BaseModel):
                 "lr":            random.choice(param_grid["lr"]),
                 "weight_decay":  random.choice(param_grid["weight_decay"]),
                 "batch_size":    random.choice(param_grid["batch_size"]),
-                "patience":      40,
+                "patience":      30,
             }
 
             print(f"\n  [{i+1:>2}/{n_iter}] Config: {model_config}")

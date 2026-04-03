@@ -157,8 +157,8 @@ class RandomForestModel(BaseModel):
         param_grid = {
             "n_estimators":     [100, 200, 300, 500],
             "max_depth":        [10, 15, 20, 30, None],
-            "min_samples_leaf": [10, 20, 40, 60, 100],
-            "min_samples_split":[2, 5, 10, 20],
+            "min_samples_leaf": [10, 20, 40, 60, 100, 200, 500],
+            "min_samples_split":[2, 5, 10, 20, 50, 100],
             "max_features":     ["sqrt", "log2", 0.3, 0.5, None],
         }
 

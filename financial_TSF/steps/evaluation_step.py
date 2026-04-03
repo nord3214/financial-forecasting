@@ -22,11 +22,12 @@ class EvaluationStep(PipelineStep):
         step_result = self.map_predictions_to_tickers(step_result)
         step_result = self.unscale_predictions(step_result)
         
-        efficient_frontier = PortfolioOptimizer(split_data=step_result.split_data, horizons=self.config.settings.forecast_horizon)
-        step_result.metrics['economic_evaluation'] = efficient_frontier.run()
+        # efficient_frontier = PortfolioOptimizer(split_data=step_result.split_data, horizons=self.config.settings.forecast_horizon)
+        # step_result.metrics['economic_evaluation'] = efficient_frontier.run()
         
         graph_visualization = GraphVisualization(config=self.config, step_result=step_result)
         graph_visualization.run()
+        
         
         
         
@@ -97,8 +98,9 @@ class EvaluationStep(PipelineStep):
                     # no need for unscaling
                     continue
                     
-
             
+            step_result.y_test = pd.concat([split['y_test'] for split in step_result.split_data], axis=0)
+            step_result.y_test_pred = pd.concat([split['y_test_pred'] for split in step_result.split_data], axis=0)
             # for now set to None to not get confused of still scaled values
             split['y_val'] = None
             split['y_train_pred'] = None     
@@ -129,6 +131,7 @@ class EvaluationStep(PipelineStep):
         """     
         
         metrics = {}
+        statistics = {}
         
         for i, horizon in enumerate(self.config.settings.forecast_horizon):
             # :TODO convert to dataframe or different indexing!
@@ -148,6 +151,15 @@ class EvaluationStep(PipelineStep):
 
             # sim.plot_equity_curve()
             
+            # -------- calculate y_test horizon statistics -------------
+            y_true_vol = y_true_horizon.std()
+            y_true_mean = y_true_horizon.mean()
+            y_true_median = y_true_horizon.median()
+            
+            y_pred_vol = y_pred_horizon.std()
+            y_pred_mean = y_pred_horizon.mean()
+            y_pred_median = y_pred_horizon.median()
+            
         
             metrics[f"Horizon_{horizon}"] = {
                 "MAE": mean_absolute_error(y_true_horizon, y_pred_horizon),
@@ -160,6 +172,15 @@ class EvaluationStep(PipelineStep):
                 # "Number_of_Trades": int(sim.no_of_entries)
             }
             
+            statistics[f"Horizon_{horizon}"] = {
+                "y_true_vol": y_true_vol,
+                "y_true_mean": y_true_mean,
+                "y_true_median": y_true_median,
+                "y_pred_vol": y_pred_vol,
+                "y_pred_mean": y_pred_mean,
+                "y_pred_median": y_pred_median,
+            }
+            
         metrics["Global"] = {
             "MAE": mean_absolute_error(y_true, y_pred),
             "MSE": mean_squared_error(y_true, y_pred),
@@ -168,6 +189,8 @@ class EvaluationStep(PipelineStep):
         }
         
         print("Multi-step Forecasting Metrics: ", metrics)    
+        metrics["Statistics_test_set"] = statistics
+        
         return metrics
     
 

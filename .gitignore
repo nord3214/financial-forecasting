@@ -12,3 +12,4 @@ tests/resources/stock_prices.csv
 resultsTraining/
 thesis_results/
 out/
+financial_TSF/features/feature_config.json_only_2_active
