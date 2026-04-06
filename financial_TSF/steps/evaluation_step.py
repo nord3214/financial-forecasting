@@ -22,8 +22,8 @@ class EvaluationStep(PipelineStep):
         step_result = self.map_predictions_to_tickers(step_result)
         step_result = self.unscale_predictions(step_result)
         
-        # efficient_frontier = PortfolioOptimizer(split_data=step_result.split_data, horizons=self.config.settings.forecast_horizon)
-        # step_result.metrics['economic_evaluation'] = efficient_frontier.run()
+        efficient_frontier = PortfolioOptimizer(split_data=step_result.split_data, horizons=self.config.settings.forecast_horizon)
+        step_result.metrics['economic_evaluation'] = efficient_frontier.run()
         
         graph_visualization = GraphVisualization(config=self.config, step_result=step_result)
         graph_visualization.run()
@@ -152,13 +152,13 @@ class EvaluationStep(PipelineStep):
             # sim.plot_equity_curve()
             
             # -------- calculate y_test horizon statistics -------------
-            y_true_vol = y_true_horizon.std()
-            y_true_mean = y_true_horizon.mean()
-            y_true_median = y_true_horizon.median()
-            
-            y_pred_vol = y_pred_horizon.std()
-            y_pred_mean = y_pred_horizon.mean()
-            y_pred_median = y_pred_horizon.median()
+            y_true_vol = float(y_true_horizon.std())
+            y_true_mean = float(y_true_horizon.mean())
+            y_true_median = float(y_true_horizon.median())
+
+            y_pred_vol = float(y_pred_horizon.std())
+            y_pred_mean = float(y_pred_horizon.mean())
+            y_pred_median = float(y_pred_horizon.median())
             
         
             metrics[f"Horizon_{horizon}"] = {

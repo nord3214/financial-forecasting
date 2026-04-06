@@ -1,7 +1,7 @@
 {
     "data": {
         "concatenated_csv": "data/concatenated/",
-        "number_of_tickers": 11,
+        "number_of_tickers": 4,
         "start_date": "2015-01-01",
         "end_date": "2023-12-31",
         "use_cached_processed_data": false,
@@ -13,9 +13,7 @@
     "features": {
         "featureConfigPath": "financial_TSF/features/feature_config.json",
         "complexity_levels": [
-            10,
-            20,
-            30
+            20
         ]
     },
     "pipeline": {
@@ -28,12 +26,12 @@
             "EvaluationStep",
             "SavingStep"
         ],
-        "use_hyperparameter_tuning": false,
+        "use_hyperparameter_tuning": true,
         "use_scaling": true,
         "use_winsorizing": true
     },
     "results": {
-        "resultsPath": "results/final/"
+        "resultsPath": "results/thesis_w_params/"
     },
     "settings": {
         "forecast_horizon": [
