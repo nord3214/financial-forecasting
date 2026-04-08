@@ -293,8 +293,9 @@ Forecasting of financial markets has always been a very complex and nearly impos
 However, this focus may raise one question: Do these results justify the massive increase in computing power and the reduced interpretability of deep learning models? With the focus on new models, the importance of input data is maybe neglected. It is questionable whether a highly complex Transformer could achieve the same as a linear model with economically based feature engineering. Does the power of modern artificial intelligence models lie in actually understanding relationships in data better, or do they learn indicators that could already be obtained more efficiently through classical technical analysis? The answer to this question would also determine if domain knowledge is needed to train a well-performing model or if a profound knowledge of machine learning is required. There is already an ongoing discussion \cite{zeng2022transformerseffectivetimeseries} as to whether simpler linear models can achieve the same as more complex models, at least in long-term time series forecasting in different domains.
 
 \section{Efficiency vs. Predictability}
-This conflict stands in direct contrast to established financial market theory. According to the \gls{emh}, all available information is already considered in current prices. This suggests that consistently outperforming the market is not possible \cite{EfficientCapitalMarketsFama}.
-The resulting theory of a symmetric random walk postulates that price changes are random and therefore, in principle, unpredictable \cite{randomwalkburton}.
+This conflict stands in direct contrast to established financial market theory. According to the \gls{emh}, all available information is already considered in current prices. 
+This suggests that consistently outperforming the market is not possible \cite{EfficientCapitalMarketsFama}.
+This results in the theory of a symmetric random walk, where price changes are random and therefore, in principle, unpredictable \cite{randomwalkburton}.
 Nevertheless, empirical studies exist that show financial time series are not purely random signals. Technical analysis assumes that historical patterns will repeat and can be measured using different indicators \cite{murphy1999technical}.
 
 % One of the most prominent theories in stock prices in academics is the \gls{emh} from Fama. It suggests that prices already include all available information instantious. This results that changes in price movements is due to noise. Strictly following this theory would result that past obeservations are unnecesearry because no information lies in them to predict future outcomes. For a financial model this would result that the best a model can do is to predict noise. 
@@ -340,7 +341,7 @@ For financial \gls{tsf}, many papers exist on different financial instruments an
 
 Random Forests and deep neural networks were already applied to forecasting daily returns of the S\&P 500, which resulted in Random Forest as the model of choice \cite{KRAUSS2017689_rf}.
 
-Kraus et al. \cite{FISCHER2018654_lstm} later proved in their work the advancements of the \gls{lstm} model beyond other machine learning models such as \gls{rf} and ARIMA models. It resulted in profitable prediction strategies prior to transaction costs for \gls{lstm} models.
+Kraus et al. \cite{FISCHER2018654_lstm} later proved in their work the advancements of the \gls{lstm} model beyond other machine learning models such as \gls{rf} and \gls{arima} models. It resulted in profitable prediction strategies prior to transaction costs for \gls{lstm} models.
 
 As Sezer et al. \cite{sezer2020financial} concluded in their literature review, in most of the studies, deep learning outperformed traditional machine learning methods, but still in many cases their performance was comparable \cite[p. 25]{sezer2020financial}.
 
@@ -366,20 +367,20 @@ such as the tendency of investors to buy well-performing assets and sell poorly 
 
 \section{Definitions and Forecasting Strategies}
 Time series analysis involves the study of data points indexed in temporal order. In the context of financial markets, the objective is to utilize historical price data to predict future values $y_{t+h}$, where $h$ represents the predicted horizon and $t$ is the last timestamp of observed data.
-\paragraph{Univariate and Multivariate \gls{tsf}}
+\paragraph{Univariate and Multivariate \gls{tsf}:}
 
 Depending on the input dimensionality, it is distinguished between univariate \gls{tsf}, which uses only the target variable's history and multivariate \gls{tsf}, which incorporates exogenous variables (features).
 
 
-\paragraph{Short-Term \gls{tsf} and Long-Term \gls{tsf}}
+\paragraph{Short-Term \gls{tsf} and Long-Term \gls{tsf}:}
 
 Short-Term \gls{tsf}: Typically focuses on the next immediate steps ($h \in \{1,\dots, 10\}$) whereas Long-Term \gls{tsf} focuses on modeling underlying trends over extended horizons. In recent state-of-the-art literature and their utilized benchmarks \cite{nie2023timeseriesworth64}, Long-Term \gls{tsf} is often defined by horizons of $h \in \{96, 192, 336, 720\}$.
 % Given the 5-minute resolution of the dataset used in this study, the chosen horizons $H = \{6, 12, 24, 48\}$ are within the short- to medium-term forecasting range.
 
-\paragraph{Direct and Recursive Forecasting}
+\paragraph{Direct and Recursive Forecasting:}
 An important consideration is, how a model handles multi-step predictions ($h > 1$).
 \begin{itemize}
-    \item Recursive (Iterative) Forecasting: The model only predicts the next timestamp $t+1$, and uses this prediction as the next input to predict $t+2$. This technique is less robust for large horizons, since inaccuracies in the first predictions accumulate through the entire horizon window.
+    \item Recursive (Iterative) Forecasting: The model only predicts the next timestamp $t+1$ and uses this prediction as the next input to predict $t+2$. This technique is less robust for large horizons, since inaccuracies in the first predictions accumulate through the entire horizon window.
     \item Direct Forecasting: The model is trained to predict the specific horizon $t+h$ directly from $t$. This is more robust for longer horizons, as it avoids the error propagation of recursive models. 
     % This approach is also applied in this study. 
 \end{itemize}
@@ -466,7 +467,8 @@ The ensemble method makes this estimator more robust to outliers and noise, whic
     
 
 \subsection{Multilayer Perceptron}
-The \gls{mlp} is considered a deep neural network, that consists of one input layer, one or multiple hidden layers and an output layer. Because of non-linear activation functions like \gls{relu}within the hidden layers, it is able to model complex non-linear relationships in the input data. 
+The \gls{mlp} is considered a deep neural network, that consists of one input layer, one or multiple hidden layers and an output layer. 
+Because of non-linear activation functions like \gls{relu} within the hidden layers, it is able to model complex non-linear relationships in the input data. 
 
 \begin{itemize}
 \item \textbf{Input Layer}: Receives the preprocessed features $\mathbf{x}$.
@@ -502,7 +504,7 @@ The core of the Transformer is the \textbf{Scaled Dot-Product Attention}. This m
     \item \textbf{Value ($V$):} Contains the actual information for each item in the sequence.
 \end{itemize}
 
-Mathematically, the attention score calculation was proposed by Vaswani et al. \cite{NIPS2017_Attention_is_All_you_Need} as follows:
+Mathematically, the attention score calculation was proposed by Vaswani et al. \cite{NIPS2017_Attention_is_All_you_Need} as following:
 
 \begin{equation}
     \text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^\top}{\sqrt{d_k}}\right)V
@@ -600,7 +602,7 @@ However the properties of individual architectures can be used to classify each 
 \label{ch:overview}
 To provide a better understanding, the process of the methodology is explained using the defined notation. For each ticker $n$, its input data at time step $t$ is represented by a feature vector $\mathbf{x}_{t,n} \in \mathbb{R}^D$, where $D$ represents the number of dimensions corresponding to the chosen complexity level $C_k$.
 
-Since each estimator is trained on all ticker data, the individual feature vectors are concatenated into a global feature matrix $\mathbf{X}_t = [\mathbf{x}_{t,1}, \mathbf{x}_{t,2}, \dots, \mathbf{x}_{t,N}]^T \in \mathbb{R}^{N \times D}$. A specific estimator $f$ is trained to predict the vector of log\_returns for the predefined horizons $H$. Although the feature matrix has the format $\mathbf{X}_t$, the estimator only processes the data of one ticker $n$ at a time. The mapping can be written as:
+Since each estimator is trained on all ticker data, the individual feature vectors are concatenated into a global feature matrix $\mathbf{X}_t = [\mathbf{x}_{t,1}, \mathbf{x}_{t,2}, \dots, \mathbf{x}_{t,N}]^T \in \mathbb{R}^{N \times D}$. A specific estimator $f$ is trained to predict the vector of log-returns for the predefined horizons $H$. Although the feature matrix has the format $\mathbf{X}_t$, the estimator only processes the data of one ticker $n$ at a time. The mapping can be written as:
 \begin{equation}
    \hat{\mathbf{y}}_{t, n} = f(\mathbf{x}_{t,n})
 \end{equation}
@@ -622,13 +624,13 @@ For the baseline models, a multi-output wrapper is utilized, allowing the linear
 \section{Pipeline Definition}
 
 The experimental setup is implemented in Python, using a modular pipeline architecture designed for customizable operations. This chapter details the technical implementation to provide a comprehensive understanding of the workflow of experimental framework and ensure the reproducibility of the results. The Code repository is available at: \url{https://git.fiw.fhws.de/k62214/financial-time-series-forecasting}.
-The pipeline is built by the principles of separation of concerns, ensuring that each pipeline step remains isolated and modular. The pipeline class (see Appendix \ref{code:class_Pipeline}) acts as a scaffold for the setup, upon instantiation, the pipeline object initializes the required steps and the corresponding model class from the configuration (see Appending \ref{code:class_BaseModel}). Communication between steps is handled via a standardized \texttt{StepResult} object, which carries data and metadata through the sequence. Each individual step implements a unified \texttt{PipelineStep} interface (see Appendix \ref{code:class_PipelineStep}), enforcing a consistent structure throughout the execution process.
+The pipeline is built by the principles of separation of concerns, ensuring that each pipeline step remains isolated and modular. The pipeline class (see Appendix \ref{code:class_Pipeline}) acts as a scaffold for the setup, upon instantiation, the pipeline object initializes the required steps and the corresponding model class from the configuration (see Appendix \ref{code:class_BaseModel}). Communication between steps is handled via a standardized \texttt{StepResult} object, which carries data and metadata through the sequence. Each individual step implements a unified \texttt{PipelineStep} interface (see Appendix \ref{code:class_PipelineStep}), enforcing a consistent structure throughout the execution process.
  
 
 
 \section{Configuration-Driven Execution}
 
-For a consistent experimental setup, the entire workflow is managed by a central configuration file, \texttt{config.json} (see Appendix \ref{app:config_json}). This file defines the parameters and configurations for the execution environment, including:
+For a consistent experimental setup, the entire workflow is managed by a central configuration file, \texttt{config.json} (see Appendix \ref{code:config_json}). This file defines the parameters and configurations for the execution environment, including:
 
 
 \begin{itemize}
@@ -658,7 +660,7 @@ The pipeline iterates through the defined steps sequentially. Each step performs
 This step loads all CSV files containing the \gls{ohlcv} data based on the configuration. Data validation is performed on each ticker individually to ensure consistency across the selected date range.
 
 \paragraph{\texttt{FeatureStep}:}
-This step computes the technical indicators defined in the \texttt{featureconfig.json} (Appendix \ref{app:feature_config_json}). This configuration also acts as the mapping of features to their respective complexity levels. Only features corresponding to the active complexity levels from the file are calculated. 
+This step computes the technical indicators defined in the \texttt{featureconfig.json} (Appendix \ref{code:feature_config_json}). This configuration also acts as the mapping of features to their respective complexity levels. Only features corresponding to the active complexity levels from the file are calculated. 
 
 \paragraph{\texttt{SplittingStep}:}
 This step determines the global splitting timestamps based on the ticker with the largest available date range (for training, validation and testing datasets).
@@ -691,7 +693,7 @@ This step saves all experimental components including configurations, trained mo
 % how many datapoints... 
 The Nasdaq-100 Index was chosen as the data source. The composition of the index was retrieved from the Nasdaq website (\url{https://www.nasdaq.com/market-activity/quotes/nasdaq-ndx-index}, accessed on January 2, 2026).
 The observation period ranges from 2015-01-01 to 2023-12-31 with a 5-minute trading interval during regular trading hours (9:30 a.m. to 4:00 p.m.), Monday through Friday.
-Historical data was fetched from \texttt{AlphaVantage} for all 101 Tickers. The historical data is only very limited available with a free membership. For reproducibility an own api key is required. The available data for each ticker is \gls{ohlcv} data, consisting of Open, High, Low and Close prices as well as volume (number of traded shares) for each 5-minute interval. Tickers with limited data availability during the specified time interval, due to different \glspl{ipo}, are used starting from their first available trading date. 
+Historical data was fetched from \texttt{AlphaVantage} for all 101 Tickers. The historical data is only very limited available with a free membership. For reproducibility an own API key is required. The available data for each ticker is \gls{ohlcv} data, consisting of Open, High, Low and Close prices as well as volume (number of traded shares) for each 5-minute interval. Tickers with limited data availability during the specified time interval, due to different \glspl{ipo}, are used starting from their first available trading date. 
 
 % \subsection{Datacleaning} ->why some data is missing of some timestamps? how split point was decided, what to do for companies that didnt where on exchange prior to this date.
 % Data is firstly validated with simple sanity checks. 
@@ -707,7 +709,7 @@ Specifically neural networks which were trained on non stationary data will not 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=1\linewidth]{plots/eda/close_timeseries.pdf}
-    \caption{The Close price in USD of AAPL over 5-minute intervals during the selected observation period}    
+    \caption[Close price of AAPL]{The Close price in USD of AAPL over 5-minute intervals during the selected observation period}    
     \label{fig:close_price}
 \end{figure}
 
@@ -718,7 +720,7 @@ Specifically neural networks which were trained on non stationary data will not 
 %     Result: Extreme outliers happen to be more often in the 5min interval than following a normal distribution. (why use of robust scaler/ Mamba/transformer
 %     \end{itemize}
 
-After applying the log-return the following plot can be examined (Figure \ref{fig:logret_timeseries}). The log-returns follow a relative stationary nature.
+The log-returns are calculated relative to the previous close price. After applying this transformation, the following plot can be examined (Figure \ref{fig:logret_timeseries}). The log-returns follow a relative stationary nature.
 
 Another property of financial returns is that  their distribution typically follow a distribution with fat tails and high kurtosis compared to a normal distribution (Figure \ref{fig:logret_dist}). 
 
@@ -738,7 +740,7 @@ Another property of financial returns is that  their distribution typically foll
         \label{fig:logret_dist}
     \end{subfigure}
 
-    \caption[AAPL Log-return Analysis]{Analysis of 5-minute log-returns for AAPL. \textbf{Left:}  The plot illustrates the stationarity of the returns and the presence of volatility clustering throughout the dataset period. The log-return fluctuates around 0, although some big outliers can be observed. \textbf{Right:} Distribution of 5-minute log-returns for LOGRET\_1 (The log-return of previous 5-min interval). The plot compares the log-return distribution against a theoretical normal distribution with corresponding $\mu$ and $\sigma$ of the distribution.}
+    \caption[AAPL log-return analysis]{Analysis of 5-minute log-returns for AAPL. \textbf{Left:}  The plot illustrates the stationarity of the returns and the presence of volatility clustering throughout the dataset period. The log-return fluctuates around 0, although some extreme outliers can be observed. \textbf{Right:} Distribution of 5-minute log-returns for LOGRET\_1 (The log-return of previous 5-min interval). The plot compares the log-return distribution against a theoretical normal distribution with corresponding $\mu$ and $\sigma$ of the distribution.}
     \label{fig:combined_logret}
 \end{figure}
 
@@ -763,14 +765,14 @@ The analysis for returns was performed only on the close price of the 5-minute i
         \label{fig:log_vol_dist}
     \end{subfigure}
 
-    \caption[AAPL Log Volume Analysis]{Analysis of 5-minute log-volume for AAPL. \textbf{Left:} The time series shows log-volume where slight distribution shifts can be observed. \textbf{Right:} The distribution of log-transformed volume compared to a normal distribution with the properties of the underlying dataset ($\mu, \sigma$). }
+    \caption[AAPL log-volume analysis]{Analysis of 5-minute log-volume for AAPL. \textbf{Left:} The time series shows log-volume where slight distribution shifts can be observed. \textbf{Right:} The distribution of log-transformed volume compared to a normal distribution with the properties of the underlying dataset ($\mu, \sigma$). }
     \label{fig:combined_log_volume}
 \end{figure}
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=1\linewidth]{plots/eda/volume_2023-10-27.pdf}
-    \caption{AAPL volume for a randomly selected day (2023-10-27). Volume spikes at the opening and closing times of the stock exchange can be observed.}
+    \caption[AAPL daily volume]{AAPL volume for a randomly selected day (2023-10-27). Volume spikes at the opening and closing times of the stock exchange can be observed.}
     \label{fig:volume_daily}
 \end{figure}
 
@@ -790,11 +792,11 @@ With this strategy applied, it is possible for individual tickers to have missin
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=1\linewidth]{plots/eda/splitting_step/splitpoints_alltickers_2015-01-01_2023-12-31.pdf}
-    \caption{Data availability of the top 15 tickers sorted by their first available timestamp  in descending order. Start point for the validation set: 2021-09-30. Start point for the  testing set: 2023-02-06.}
+    \caption[Data availability and split points of dataset]{Data availability of the top 15 tickers sorted by their first available timestamp  in descending order. Start point for the validation set: 2021-09-30. Start point for the  testing set: 2023-02-06.}
     \label{fig:splitpoints}
 \end{figure}
 Applying this strategy reduced the number of assets from 101 to 92 tickers. Figure \ref{fig:splitpoints} illustrates the data availability and the global split lines.
-In this case, out of 101 Tickers, were 9 removed after applying this strategy. 
+In this case, out of 101 tickers, 9 were removed after applying this strategy. 
 
 
 \subsection{Preprocessing}
@@ -824,7 +826,7 @@ Since log-returns in financial time series follow leptokurtic distributions as p
         \label{fig:boxplot_unscaled_Kurtosis_50}
     \end{subfigure}
 
-    \caption{Boxplot of unscaled features across 10 selected tickers. It can be observed that the range of the features varies significantly and extreme outliers are present.}
+    \caption[Boxplot of unscaled features]{Boxplot of unscaled features across 10 selected tickers. It can be observed that the range of the features varies significantly and extreme outliers are present.}
     \label{fig:boxplot_unscaled}
 \end{figure}
 
@@ -851,7 +853,7 @@ Since log-returns in financial time series follow leptokurtic distributions as p
         \label{fig:boxplotwinsorized_1.0_percentiles_Kurtosis_50}
     \end{subfigure}
 
-    \caption{Boxplot of winsorized features using the 1st and 99th percentiles as thresholds across 10 selected tickers. In \ref{fig:boxplot_winsorized_1.0_percentiles_LOGRET_1}, it can be  observed that the range of log-returns is reduced drastically compared to the unscaled version in Figure \ref{fig:boxplot_unscaled_LOGRET_1}. These extreme outliers have been capped at the threshold values.}
+    \caption[Boxplot of winsorized features]{Boxplot of winsorized features using the 1st and 99th percentiles as thresholds across 10 selected tickers. In \ref{fig:boxplot_winsorized_1.0_percentiles_LOGRET_1}, it can be  observed that the range of log-returns is reduced drastically compared to the unscaled version in Figure \ref{fig:boxplot_unscaled_LOGRET_1}. These extreme outliers have been capped at the threshold values.}
     \label{fig:boxplot_winsorized_1.0_percentiles}
 \end{figure}
 
@@ -868,7 +870,7 @@ where $\mu$ represents the mean and $\sigma$ the standard deviation. However, as
 \end{equation}
 Since the \gls{iqr} (the range between the 25th($Q_1$) and 75th($Q_3$) percentiles) only considers the central distribution measure, the scaling factor is significantly more stable across different market phases and volatility jumps.
 
-It can be observed that the median for the feature kurtosis with the standard scaling method is distorted more into the negative direction compared to the robust scaling method (see Figure \ref{fig:boxplot_standardscaled_winsorized_1.0_percentiles_Kurtosis_50}). This is the result of the still present positive outliers. 
+It can be observed that the median for the feature kurtosis with the standard scaling method (Figure \ref{fig:boxplot_standardscaled_winsorized_1.0_percentiles_Kurtosis_50}) is distorted more into the negative direction compared to the robust scaling method (Figure \ref{fig:boxplot_robustscaled_winsorized_1.0_percentiles_Kurtosis_50}). This is the result of the still present positive outliers. 
 
 \begin{figure}[htbp]
     \centering
@@ -893,7 +895,7 @@ It can be observed that the median for the feature kurtosis with the standard sc
         \label{fig:boxplot_standardscaled_winsorized_1.0_percentiles_Kurtosis_50}
     \end{subfigure}
 
-    \caption{Boxplot of data that was first winsorized and then scaled with the standard scaling method on selected tickers.}
+    \caption[Boxplot of standardscaled and winsorized data]{Boxplot of data that was first winsorized and then scaled with the standard scaling method on selected tickers.}
     \label{fig:boxplot_standardscaled_winsorized_1.0_percentiles}
 \end{figure}
 
@@ -921,15 +923,15 @@ It can be observed that the median for the feature kurtosis with the standard sc
         \label{fig:boxplot_robustscaled_winsorized_1.0_percentiles_Kurtosis_50}
     \end{subfigure}
 
-    \caption{Boxplot of the data that was first winsorized and then scaled with the robust scaling method on selected tickers.}
+    \caption[Boxplot of robustscaled and winsorized data]{Boxplot of the data that was first winsorized and then scaled with the robust scaling method on selected tickers.}
     \label{fig:boxplot_robustscaled_winsorized_1.0_percentiles}
 \end{figure}
 
 \subsubsection{Range Clipping}
-Despite robust scaling, individual features can still take on values outside the expected range due to extreme volatility. As the distribution diagram for the kurtosis feature (see Figure \ref{fig:boxplot_robustscaled_winsorized_1.0_percentiles_Kurtosis_50} shows, a final “hard clipping” is performed. This limits all features of each ticker $n$ to the interval $[-5, 5]$. The choice of this range is based on testing where the different models were most stable during training. 
+Despite robust scaling, individual features can still take on values outside the expected range (see Figure \ref{fig:boxplot_robustscaled_winsorized_1.0_percentiles_Kurtosis_50}) due to extreme volatility. Therefore a final “hard clipping” is performed. This limits all features of each ticker $n$ to the interval $[-5, 5]$. The choice of this range is based on testing where the different models were most stable during training. 
 % Activation functions such as Tanh or Sigmoid are sensitive to the input scaling. Values far outside of ±3 standard deviations can lead to vanishing or exploding gradients. The chosen range represents a heuristic compromise.
 \subsubsection{Data Leakage}
-To avoid data leakage, all parameters, the percentiles for winsorization and the median and \gls{iqr} for robust scaling were calculated based exclusively on the training set and then applied to the validation and testing sets. This ensures that no future information is leaked into the scaling logic of the training phase. 
+To avoid data leakage, all parameters, the percentiles for winsorization, the median and \gls{iqr} for robust scaling were calculated exclusively based on the training set and then applied to the validation and testing sets. This ensures that no future information is leaked into the scaling logic of the training phase. 
 \subsubsection{Handling Target Variables}
 The target variables, the log-returns for the selected horizons, were only scaled, but not winsorized nor clipped. This approach aims to preserve actually price jumps or crashes, which the model should be able to predict. 
 
@@ -946,7 +948,7 @@ A comprehensive list detailing each feature and its explanatory value can found 
 
 \begin{table}[htbp]
 \centering
-\caption{Overview of feature Ccmplexity permutations and dimensions}
+\caption{Overview of feature complexity permutations and dimensions}
 \label{tab:feature_distribution}
 \begin{tabular}{llcc}
 \toprule
@@ -975,7 +977,7 @@ This approach allows for a detailed analysis of how different types of informati
 The following models were selected for this evaluation and were classified according to the proposed models properties. They cover a range from traditional statistical estimators to state-of-the-art deep learning architectures.
 
 \subsubsection{Linear Regression}
-As the simplest model for this evaluation, a linear regression model is chosen to serve a predictive baseline estimator. More specifically an \gls{ols} regression is implemented. It can model linear relationships between the input features and the target returns.
+As the simplest model for this evaluation, a linear regression model is chosen to serve as a predictive baseline estimator. More specifically an \gls{ols} regression is implemented. It can model linear relationships between the input features and the target returns.
 
 The primary advantage of this estimator is its computational efficiency and high interpretability. Its limitations are the lack of ability to capture non-linear relationships or temporal dependencies between the variables.
 % For implementation the LinearRegression from scikit-learn was used.
@@ -1005,7 +1007,7 @@ It utilizes two unique concepts compared to traditional Transformers, dividing t
 
 \end{itemize}
 
-\gls{patchtst} utilizes only the encoder part of the traditional Transformers, in which each embedding is transformed into an abstract representation. These representations are then used in a regression head, which in this case is for forecasting the different time horizons. 
+\gls{patchtst} utilizes only the encoder part of the traditional Transformers, in which each embedding is transformed into an abstract representation. These representations are then used in a regression head, which in this case is responsible for forecasting the different time horizons. 
 
 The self-attention mechanism allows the estimator to learn dependencies across different timesteps within the lookback window.
 % The model was implemented with the help of the library transformers from huggingface. 
@@ -1034,10 +1036,10 @@ PatchTST                      & Non-Linear         & Yes                 & Yes (
 \subsection{Complexity Hierarchy Justification}
 
 \begin{enumerate}
-\item \textbf{Level 1: Linear Regression:} Assumes global linearity and serves as the baseline.
-\item \textbf{Level 2: Random Forest:} Introduces non-linear decision boundaries through recursive data splits.
-\item \textbf{Level 3: \gls{mlp}:} Utilizes hidden layers to learn abstract feature representations.
-\item \textbf{Level 4: \gls{patchtst}:} Integrates deep neural layers with a multi-head attention mechanism to capture sequential structure and long-range dependencies in the data.
+\item \textbf{Level 1 - Linear Regression:} Assumes global linearity and serves as the baseline.
+\item \textbf{Level 2 - Random Forest:} Introduces non-linear decision boundaries through recursive data splits.
+\item \textbf{Level 3 - \gls{mlp}:} Utilizes hidden layers to learn abstract feature representations.
+\item \textbf{Level 4 - \gls{patchtst}:} Integrates deep neural layers with a multi-head attention mechanism to capture sequential structure and long-range dependencies in the data.
 \end{enumerate}
 
 \section{Experimental Setup}
@@ -1052,7 +1054,7 @@ First, statistical methods to evaluate the point forecast  accuracy of the model
 \subsection{Statistical Metrics}
     These metrics evaluate the error between the predicted returns and the actual ground-truth values. 
 
-    \paragraph{Mean Sqared Error:} The \gls{mse} penalizes large outliers quadratically. 
+    \paragraph{Mean Squared Error:} The \gls{mse} penalizes large outliers quadratically. 
     \begin{equation}
         MSE = \frac{1}{n} \sum_{i=1}^{n} (y_i - \hat{y}_i)^2
     \end{equation}
@@ -1076,8 +1078,9 @@ an optimal portfolio is constructed. This process takes two primary inputs: expe
 
 The ground-truth returns of the tickers are multiplied by the resulting weight vector of the optimal portfolio to determine the performance. 
 This procedure is applied across the entire test set, over all horizons $H$, resulting in the annualized return and the annualized Sharpe ratio 
-for each of the four horizons respectively. While portfolio rebalancing costs are not considered, the results still provide a risk-adjusted view of the models. 
-The annualized return represents the total return the strategy would yield over a one-year period. The annualized Sharpe ratio measures the risk-adjusted performance. It indicates how much return is generated per unit of risk, which is defined as the standard deviation of the returns.
+for each of the four horizons respectively. 
+The annualized return represents the total return, the strategy would yield over a one-year period. The annualized Sharpe ratio measures the risk-adjusted performance. It indicates how much return is generated per unit of risk, which is defined as the standard deviation of the returns.
+While portfolio rebalancing costs are not considered, the results still provide a risk-adjusted view of the models. 
 
 \section{Training Process with Hyperparameter Tuning}
 The models hyperparameters are selected through a hyperparameter tuning process. Due to the high computational demand of training all configurations across every complexity level $C_k$, the process was restricted to a subset of $N = 5$ tickers.
@@ -1086,7 +1089,7 @@ The training process is performed using a specific subset of the available hyper
 
 This process is performed for $10$ iterations, where each configuration is randomly sampled from the available hyperparameter space. After the hyperparameter tuning process has finished, the configuration with the lowest validation loss is selected for the final model training on the combined training and validation sets.
 
-The training was conducted on a workstation with an AMD Ryzen 7 3800X as CPU and a Nvidia 2060 Super as GPU.
+The training was conducted on a workstation with an AMD Ryzen 7 3800X as CPU and an Nvidia 2060 Super as GPU.
 
 
 
@@ -1127,7 +1130,7 @@ Furthermore, these results do not account for transaction costs, which would sig
 
 
 \begin{landscape}
-\captionof{table}{The \gls{mae} and \gls{mse} were computed on the unscaled predicted returns. The numbers are scaled to better visualize the results.}
+\captionof{table}[Statistical results]{Statistical results: The \gls{mae} and \gls{mse} were computed on the unscaled predicted returns. The numbers are scaled to better visualize the results.}
 \label{tab:model_eval}
 \begin{tabular}{p{2.2cm} p{1.5cm}|*{10}{>{\centering\arraybackslash}p{1.1cm}}}
 \toprule
@@ -1173,7 +1176,7 @@ Complexity & Horizon &  &  &  &  &  &  &  &  &  &  \\
 \bottomrule
 \end{tabular}
 
-\captionof{table}{The "Return" represents the annualized return and "Sharpe" the Sharpe ratio over the testing period repecitvely.}
+\captionof{table}[Economic evaluation]{Economic evaluation: The "Return" represents the annualized return and "Sharpe" the Sharpe ratio over the testing period respectively.}
 %\resizebox{\textwidth}{!}{
 \label{tab:economic_eval}
 \begin{tabular}{p{2.2cm} p{1.5cm}|*{10}{>{\centering\arraybackslash}p{1.1cm}}}
@@ -1236,12 +1239,12 @@ The analysis focuses on four key areas:
 \end{itemize}
 
 \subsubsection{Dataset Discrepancy and Non-Stationarity}
-A primary challenge in financial forecasting is the non-stationarity of the data. Comparing the two main features (volume and return), from which most other features are calculated on, across the training, validation and testing sets reveals a distribution shift (see Table \ref{tab:dataset_discrepancy}).
+A primary challenge in financial forecasting is the non-stationarity of the data. Comparing the two main features (volume and return), from which most other features are calculated on, across the training, validation and testing sets, reveals a distribution shift (see Table \ref{tab:dataset_discrepancy}).
 
 
 \begin{table}[htbp]
 \centering
-\caption{Descriptive statistics of scaled features (with robust scaling method) across datasets for AAPL, similar shifts can be observed for other tickers.}
+\caption[Descriptive statistics of scaled features]{Descriptive statistics of scaled features (with robust scaling method) across datasets for AAPL, similar shifts can be observed for other tickers.}
 \label{tab:dataset_discrepancy}
 \begin{tabular}{@{}llccc@{}}
 \toprule
@@ -1260,7 +1263,7 @@ The discrepancy in performance can be partly explained by the shift in the log-v
 
 \subsubsection{Training Dynamics and Overfitting}
 
-To further examine the model quality, the learning curves of the deep learning models (trained without early stopping) are presented in Figure \ref{fig:learning curves}.
+To further examine the model quality, the learning curves of the deep learning models (trained without early stopping on Complexity $C_{L10+L20+L30}$) are presented in Figure \ref{fig:learning curves}.
 
 For the deep learning architectures (\gls{mlp} and \gls{patchtst}), a rapid divergence between training and validation loss is observed. While the models are capable of reducing the training loss nearly to zero, the validation error remains stagnant or increases slightly. This indicates a lack of a learnable, generalizable signal.
 
@@ -1279,7 +1282,7 @@ For the deep learning architectures (\gls{mlp} and \gls{patchtst}), a rapid dive
 \caption{Learning curve for \gls{patchtst}}
 \label{fig:learning_curve_patchtst}
 \end{subfigure}
-\caption[Learning Curves]{Training Curves}
+\caption[Learning curves]{Training curves}
 \label{fig:learning curves}
 \end{figure}
 
@@ -1289,7 +1292,7 @@ To gain a clearer understanding, the model predictions for \gls{patchtst} is vis
 
 \begin{table}[htbp]
 \centering
-\caption{Comparison of statistical properties: Ground truth vs. model predictions of all models (Horizon $h=6$ and complexity $C_k = C_{L10+L20+L30}$)}
+\caption[Comparison of statistical properties: Ground truth vs. model predictions]{Comparison of statistical properties: Ground truth vs. model predictions of all models (Horizon $h=6$ and complexity $C_k = C_{L10+L20+L30}$)}
 \label{tab:prediction_stats}
 \begin{tabular}{lccc}
 \toprule
@@ -1314,8 +1317,7 @@ Financial time series exhibit a low signal-to-noise ratio. If the data does not 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{plots/predictions/weekly_predictions_target_6.pdf}
-\caption{Comparison of predicted log-returns compared to ground truth for \gls{patchtst} (Horizon $h=6$ and complexity $C_k = C_{L10+L20+L30}$).
-}
+\caption[Comparison of predicted log-returns]{Comparison of predicted log-returns compared to ground truth for \gls{patchtst} (Horizon $h=6$ and complexity $C_k = C_{L10+L20+L30}$).}
 \label{fig:predictions_patchtst}
 \end{figure}
 
@@ -1364,7 +1366,6 @@ Future research could expand upon these findings in several directions:
 \addchap{Appendix}
 
 \addsec{Appendix A: Detailed Feature Specification}
-\label{appendix:feature_specs}
 
  % load feature description csv - uncomment below
 \begin{landscape}
@@ -1376,7 +1377,7 @@ Future research could expand upon these findings in several directions:
     column count=6,
     longtable={p{0.18\linewidth} p{0.08\linewidth} p{0.18\linewidth} p{0.50\linewidth}},
     table head=
-        \caption{Overview of all features used in this thesis, categorized by complexity level. Feature names are listed exactly as they appear in \texttt{feature\_config.json}. Indicator parameters can be retrieved from \texttt{feature\_config.json}, and implementation details can be found in \texttt{technical\_indicator.py}.}
+        \caption[Overview of all features]{Overview of all features used in this thesis, categorized by complexity level. Feature names are listed exactly as they appear in \texttt{feature\_config.json}. Indicator parameters can be retrieved from \texttt{feature\_config.json}, and implementation details can be found in \texttt{technical\_indicator.py}.}
         \label{tab:appendix_features}\\
         \toprule
         \textbf{Name} & \textbf{Cplx. Level} & \textbf{Category} & \textbf{Description} \\ \midrule
@@ -1399,8 +1400,7 @@ Future research could expand upon these findings in several directions:
 
 
 \addsec{Appendix B: Setup Configuration (config.json)}
-\label{app:config_json}
-\begin{lstlisting}[language=json, caption={Example configuration file for the pipeline setup.}]
+\begin{lstlisting}[language=json, caption={Example configuration file for the pipeline setup.}, label={code:config_json}]
 {
     "data": {
         "concatenated_csv": "data/concatenated/",
@@ -1444,8 +1444,7 @@ Future research could expand upon these findings in several directions:
 \end{lstlisting}
 
 \addsec{Appendix C: Pipeline Class}
-\label{code:class_Pipeline}
-\begin{lstlisting}[language=Python, caption={Implementation of pipeline class.}]
+\begin{lstlisting}[language=Python, caption={Implementation of pipeline class.}, label={code:class_Pipeline}]
 class Pipeline:
     def __init__(self, config_path: str = "financial_TSF/config.json"):
         with open(config_path, "r") as f:
@@ -1466,8 +1465,7 @@ class Pipeline:
 
 
 \addsec{Appendix D: Base Model Interface}
-\label{code:class_BaseModel}
-\begin{lstlisting}[language=Python, caption={Abstract base class for all model implementations.}]
+\begin{lstlisting}[language=Python, caption={Abstract base class for all model implementations.}, label={code:class_BaseModel}]
 class BaseModel(ABC):
     
     @abstractmethod
@@ -1479,11 +1477,17 @@ class BaseModel(ABC):
         
     def tune_hyperparameters(self, step_result: StepResult) -> dict | None:
         pass
+
+    def save_model(self, step_result: StepResult) -> Any:
+        pass
+    
+    def load_model(self, model_path: Path) -> Any:
+        pass
+        
 \end{lstlisting}
 
 \addsec{Appendix E: Base Model Interface}
-\label{code:class_PipelineStep}
-\begin{lstlisting}[language=Python, caption={Abstract base class for each pipeline step.}]
+\begin{lstlisting}[language=Python, caption={Abstract base class for each pipeline step.}, label={code:class_PipelineStep}]
 class PipelineStep(ABC):
     @abstractmethod
     def execute(self, step_result: StepResult) -> Any:
@@ -1491,8 +1495,7 @@ class PipelineStep(ABC):
 \end{lstlisting}
 
 \addsec{Appendix F: Feature Configuration (feature\_config.json)}
-\label{app:feature_config_json}
-\begin{lstlisting}[language=json, caption={Feature Configuration - shortened for readability - complete file listed in code repository.}]
+\begin{lstlisting}[language=json, caption={Feature Configuration - shortened for readability - complete file listed in code repository.}, label={code:feature_config_json}]
 {
   "technical_indicators": {
     "SMA": {
