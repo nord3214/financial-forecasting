@@ -318,9 +318,10 @@ The thesis concludes in Chapter \ref{ch:conclusion} with a summary of the findin
 
 \chapter{Literature Review}
 \label{ch:literature_review}
-This chapter describes the development of machine learning models and clarifies why skepticism towards more complex models is justified for time series forecasting.
+This chapter reviews the development of machine learning models and clarifies why skepticism towards more complex models is justified for time series forecasting. 
+Furthermore, it also gives a short introduction to asset pricing in traditional finance literature.
 
-\paragraph{Development of machine learning models and their use for \gls{tsf}.}
+\paragraph{Development of Machine Learning Models and Their Use for \gls{tsf}:}
 With the refinement of the \gls{mlp} and the backpropagation algorithm \cite{rumelhart1986learning}, modern deep learning was initiated. They could model nonlinear patterns but lacked the ability to capture temporal dependencies in time series data.
 
 Machine learning models like \gls{rf} were published around the early 2000s \cite{breiman_random_2001}. They utilize an ensemble of trees which achieve significant improvements in predictions with the benefit of being robust with respect to noise. With the introduction of \glspl{lstm}, a novel approach was presented to preserve a cell state of previous inputs, allowing information to be maintained over longer periods \cite{hochreiter_lstm}.
@@ -334,7 +335,7 @@ Therefore, fundamental deep learning models are being looked at again, like \gls
 
 New innovative models like Mamba try to reduce the quadratic time and space complexity of Transformers to linear scaling with context length \cite{gu2024mambalineartimesequencemodeling} and new Diffusion models \cite{ho2020denoisingdiffusionprobabilisticmodels} are introduced. Although there is a trend towards simpler models, increasing popularity can be observed in foundation models \cite[p. 82]{Kim2025Survey}. These models are already pre-trained on millions of data points and are, if at all, only fine-tuned on the specific dataset used. They already inherently learned structures from time series and have impressive zero-shot capabilities. This does help to remove task-specific training but still preserves a structurally complex model.
 
-\paragraph{Use of machine learning in financial \gls{tsf}.}
+\paragraph{Use of Machine Learning in Financial \gls{tsf}:}
 For financial \gls{tsf}, many papers exist on different financial instruments and forecasting strategies. Most publications exist on stock price forecasting and for a horizon of one day of daily returns \cite[p. 18]{sezer2020financial}. As Sezer et al. \cite{sezer2020financial} stated, the implementation of deep learning prediction models led to many new publications in the financial community.
 
 Random Forests and deep neural networks were already applied to forecasting daily returns of the S\&P 500, which resulted in Random Forest as the model of choice \cite{KRAUSS2017689_rf}.
@@ -343,7 +344,17 @@ Kraus et al. \cite{FISCHER2018654_lstm} later proved in their work the advanceme
 
 As Sezer et al. \cite{sezer2020financial} concluded in their literature review, in most of the studies, deep learning outperformed traditional machine learning methods, but still in many cases their performance was comparable \cite[p. 25]{sezer2020financial}.
 
+\paragraph{Financial Literature:}
+The development of asset pricing models represents the increasing recognition of market factors. Starting with the Capital Asset Pricing Model (CAPM) \cite{https://doi.org/10.1111/j.1540-6261.1964.tb02865.x}, 
+a single-factor model assuming that the expected return of the asset is only determined by $\beta$, which measures the relationship between the asset and the overall market.
 
+The Fama-French Three-Factor \cite{FAMA19933} model extends the CAPM by two additional factors: the size factor and the value factor. 
+The size factor is based on the observation that small-cap stocks tend to exhibit higher returns than large-cap stocks, 
+while the value factor assumes that assets with a high book-to-market ratio outperform ones with a lower ratio.
+
+With the introduction of the Carhart Four-Factor Model \cite{carhart_https://doi.org/10.1111/j.1540-6261.1997.tb03808.x}, 
+the model was further extended by a momentum factor. This factor also incorporates behavioral finance theories, 
+such as the tendency of investors to buy well-performing assets and sell poorly performing assets \cite{jegadeesh_https://doi.org/10.1111/j.1540-6261.1993.tb04702.x}.
 
 \chapter{Technical Prerequisites}
 \label{ch:technical_prerequisites}
@@ -362,7 +373,7 @@ Depending on the input dimensionality, it is distinguished between univariate \g
 
 \paragraph{Short-Term \gls{tsf} and Long-Term \gls{tsf}}
 
-Short-Term \gls{tsf}: Typically focuses on the next immediate steps ($h \in \{1,\dots, 10\}$) whereas Long-Term \gls{tsf} focuses on modeling underlying trends over extended horizons. In recent state-of-the-art literature and their utilized benchmarks \cite{nie2023timeseriesworth64}), Long-Term \gls{tsf} is often defined by horizons of $h \in \{96, 192, 336, 720\}$.
+Short-Term \gls{tsf}: Typically focuses on the next immediate steps ($h \in \{1,\dots, 10\}$) whereas Long-Term \gls{tsf} focuses on modeling underlying trends over extended horizons. In recent state-of-the-art literature and their utilized benchmarks \cite{nie2023timeseriesworth64}, Long-Term \gls{tsf} is often defined by horizons of $h \in \{96, 192, 336, 720\}$.
 % Given the 5-minute resolution of the dataset used in this study, the chosen horizons $H = \{6, 12, 24, 48\}$ are within the short- to medium-term forecasting range.
 
 \paragraph{Direct and Recursive Forecasting}
@@ -634,7 +645,7 @@ An overview of the code structure can be seen in Figure \ref{fig:architecture_se
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=1\linewidth]{plots/architecture/FinancialTSF_Minimal_Architecture.pdf}
-    \caption{High-level architecture of the code repository, highlighting the abstract base classes and their concrete implementations.}
+    \caption[High-level architecture of the code repository]{High-level architecture of the code repository, highlighting the abstract base classes and their concrete implementations.}
     \label{fig:architecture_setup}
 \end{figure}
 
@@ -1063,7 +1074,10 @@ an optimal portfolio is constructed. This process takes two primary inputs: expe
 \paragraph{Expected Returns:} The models point predictions are used as the estimates for future returns. These are annualized based on the specific horizon $h$.
 \paragraph{Risk Model:} The covariance matrix is calculated using historical returns from the training set to avoid look-ahead bias. For this step, Ledoit-Wolf shrinkage is utilized to ensure a stable covariance matrix.
 
-The ground-truth returns of the tickers are multiplied by the resulting weight vector of the optimal portfolio to determine the performance. This procedure is applied across the entire test set, over all horizons $H$, resulting in the annualized return and the annualized Sharpe ratio for each of the four horizons respectively. While portfolio rebalancing costs are not considered, the results still provide a risk-adjusted view of the models. 
+The ground-truth returns of the tickers are multiplied by the resulting weight vector of the optimal portfolio to determine the performance. 
+This procedure is applied across the entire test set, over all horizons $H$, resulting in the annualized return and the annualized Sharpe ratio 
+for each of the four horizons respectively. While portfolio rebalancing costs are not considered, the results still provide a risk-adjusted view of the models. 
+The annualized return represents the total return the strategy would yield over a one-year period. The annualized Sharpe ratio measures the risk-adjusted performance. It indicates how much return is generated per unit of risk, which is defined as the standard deviation of the returns.
 
 \section{Training Process with Hyperparameter Tuning}
 The models hyperparameters are selected through a hyperparameter tuning process. Due to the high computational demand of training all configurations across every complexity level $C_k$, the process was restricted to a subset of $N = 5$ tickers.
@@ -1096,7 +1110,7 @@ For the Transformer \gls{patchtst}, the parameter space and the resulting optima
 
 \section{Quantitative Analysis}
 The model evaluation is based on both statistical metrics and economic performance. To assess whether the increasing levels of feature complexity $C_k$ provide any predictive value, a "Constant Model" is introduced as a baseline.
-This baseline predicts a constant value for all timesteps in the training set and is optimized to minimize the \gls{mae} \textbf{without utilizing any} input features.
+This baseline predicts a constant value for all timesteps in the training set and is optimized to minimize the \gls{mae} \textbf{without utilizing any} input features, for each horizon $h$ respectively.
 Because of the mathematical properties of the \gls{mae}, the optimal constant predictor corresponds to the median of the target distribution. This model serves as a benchmark to determine if the more sophisticated models actually benefit from the different complexity levels or if a simple statistical average would yield similar results in the context of this study.
 
 \subsection{Machine Learning Performance Metrics}
@@ -1113,7 +1127,6 @@ Furthermore, these results do not account for transaction costs, which would sig
 
 
 \begin{landscape}
-
 \captionof{table}{The \gls{mae} and \gls{mse} were computed on the unscaled predicted returns. The numbers are scaled to better visualize the results.}
 \label{tab:model_eval}
 \begin{tabular}{p{2.2cm} p{1.5cm}|*{10}{>{\centering\arraybackslash}p{1.1cm}}}
@@ -1282,7 +1295,7 @@ To gain a clearer understanding, the model predictions for \gls{patchtst} is vis
 \toprule
 \textbf{Model} & \textbf{Mean ($10^{-4}$)} & \textbf{Median ($10^{-4}$)} & \textbf{Vol. ($\sigma$) ($10^{-4}$)} \\ \midrule
 \textbf{Ground Truth ($y$)} & \textbf{1.0086} & \textbf{1.4515} & \textbf{41.0195} \\ \midrule
-Constant Model     & 0.8631 & 0.6426 & 0.0000 \\
+Constant Model     & 0.8631 & 0.8631 & 0.0000 \\
 Linear Regression  & 0.4108 & 0.2734 & 2.9257 \\
 Random Forest      & -0.0478 & -0.0575 & 2.9138 \\
 MLP                & 0.7690 & 0.5573 & 0.3127 \\
@@ -1518,7 +1531,7 @@ class PipelineStep(ABC):
 
 \begin{landscape}
 
-\addsec{Appendix G: \gls{rf} Parameter Space}
+\addsec{Appendix G: RF Parameter Space}
 \label{app:rf_params}
 
 
@@ -1536,7 +1549,6 @@ class PipelineStep(ABC):
         \endfirsthead
         \multicolumn{9}{c}{{\bfseries \tablename\ \thetable{} -- continued}} \\
         \toprule
-        \textbf{Parameter} & \textbf{Tuning Space} & \textbf{L1} & \textbf{L2} & \textbf{L3} & \textbf{L4} & \textbf{L5} & \textbf{L6} & \textbf{L7} \\ \midrule
         \endhead,
     table foot=\bottomrule,
     late after line=\\ \midrule,
@@ -1550,7 +1562,7 @@ class PipelineStep(ABC):
 }
 
 
-\addsec{Appendix H: \gls{mlp} Parameter Space}
+\addsec{Appendix H: MLP Parameter Space}
 \label{app:mlp_params}
 
 
@@ -1568,7 +1580,6 @@ class PipelineStep(ABC):
         \endfirsthead
         \multicolumn{9}{c}{{\bfseries \tablename\ \thetable{} -- continued}} \\
         \toprule
-        \textbf{Parameter} & \textbf{Tuning Space} & \textbf{L1} & \textbf{L2} & \textbf{L3} & \textbf{L4} & \textbf{L5} & \textbf{L6} & \textbf{L7} \\ \midrule
         \endhead,
     table foot=\bottomrule,
     late after line=\\ \midrule,
@@ -1581,7 +1592,7 @@ class PipelineStep(ABC):
     \texttt{\pname} & \pspace & \plone & \pltwo & \plthree & \plfour & \plfive & \plsix & \plseven
 }
 
-\addsec{Appendix H: \gls{patchtst} Parameter Space}
+\addsec{Appendix I: PatchTST Parameter Space}
 \label{app:patchtst_params}
 
 \centering
@@ -1592,7 +1603,7 @@ class PipelineStep(ABC):
     column count=9,
     longtable={*{2}{p{0.12\linewidth}} *{7}{p{0.08\linewidth}}},
     table head=
-        \caption{Hyperparameter tuning space and best parameters for \gls{rf} models across all horizons.}\\
+        \caption{Hyperparameter tuning space and best parameters for \gls{patchtst} models across all horizons.}\\
         \toprule
         \textbf{Parameter} & 
         \textbf{Tuning Space} & 
