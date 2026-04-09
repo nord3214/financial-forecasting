@@ -23,7 +23,7 @@ poetry run pip install torch torchvision --index-url https://download.pytorch.or
 poetry run pip install torch torchvision
 ```
 
-**TA-Lib** requires the native C library to be installed on your system before `poetry install`. See the [TA-Lib installation guide](https://github.com/TA-Lib/ta-lib-python#installation).
+**TA-Lib** requires the native C library to be installed on your system before `poetry install`. It can be possible that it is missing on your system -> see the [TA-Lib installation guide](https://github.com/TA-Lib/ta-lib-python#installation).
 
 **PyPortfolioOpt** Also had trouble installing via poetry so it also has to be manually installed 
 
@@ -64,25 +64,7 @@ data/
 
 ## Project Structure
 
-```
-financial_TSF/       # Main package
-├── config.json      # Central experiment configuration
-├── pipeline/        # Pipeline orchestration and step registry
-├── steps/           # Individual pipeline steps
-├── models/          # Model implementations (LR, RF, MLP, PatchTST)
-├── features/        # Technical indicator computation & feature_config.json
-├── data_models/     # Typed dataclasses for config and shared state
-├── utils/           # Economic evaluation, metrics, helpers
-└── visualization/   # EDA and result plotting
-
-data/
-├── raw/             # Raw downloaded OHLCV CSVs per ticker
-├── concatenated/    # Merged per-ticker CSVs (~100 NASDAQ tickers)
-└── processed/       # Cached parquet files after feature engineering
-
-results/             # Timestamped result folders per experiment run
-main.py              # Entry point
-```
+![Project Overview](out\UML\architecture\FinancialTSF_Minimal_Architecture.svg)
 
 ---
 
@@ -110,6 +92,7 @@ The experiment is executed as a sequential, config-driven pipeline. Each step re
 | `RF` | Random Forest Regressor |
 | `MLP` | Multi-Layer Perceptron (PyTorch) |
 | `PatchTST` | Patch Time Series Transformer (PyTorch) |
+| `Constant` | Constant Predictor |
 
 ---
 
