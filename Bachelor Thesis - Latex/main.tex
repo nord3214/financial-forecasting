@@ -54,7 +54,7 @@ Series Forecasting}
 \def\BaSupervisorTwo{Prof. Pascal Meißner}
 \def\BaDeadline{\today}
 
-%\def\iswithfullname{1}
+\def\iswithfullname{1}
 \ifdefined\iswithfullname
   \def\ShowBaAuthor{\BaAuthor}
 \else
@@ -339,7 +339,7 @@ New innovative models like Mamba try to reduce the quadratic time and space comp
 \paragraph{Use of Machine Learning in Financial \gls{tsf}:}
 For financial \gls{tsf}, many papers exist on different financial instruments and forecasting strategies. Most publications exist on stock price forecasting and for a horizon of one day of daily returns \cite[p. 18]{sezer2020financial}. As Sezer et al. \cite{sezer2020financial} stated, the implementation of deep learning prediction models led to many new publications in the financial community.
 
-Random Forests and deep neural networks were already applied to forecasting daily returns of the S\&P 500, which resulted in Random Forest as the model of choice \cite{KRAUSS2017689_rf}.
+\glspl{rf} and deep neural networks were already applied to forecasting daily returns of the S\&P 500, which resulted in \glspl{rf} as the model of choice \cite{KRAUSS2017689_rf}.
 
 Kraus et al. \cite{FISCHER2018654_lstm} later proved in their work the advancements of the \gls{lstm} model beyond other machine learning models such as \gls{rf} and \gls{arima} models. It resulted in profitable prediction strategies prior to transaction costs for \gls{lstm} models.
 
@@ -349,7 +349,7 @@ As Sezer et al. \cite{sezer2020financial} concluded in their literature review, 
 The development of asset pricing models represents the increasing recognition of market factors. Starting with the Capital Asset Pricing Model (CAPM) \cite{https://doi.org/10.1111/j.1540-6261.1964.tb02865.x}, 
 a single-factor model assuming that the expected return of the asset is only determined by $\beta$, which measures the relationship between the asset and the overall market.
 
-The Fama-French Three-Factor \cite{FAMA19933} model extends the CAPM by two additional factors: the size factor and the value factor. 
+The Fama-French Three-Factor model \cite{FAMA19933} extends the CAPM by two additional factors: the size factor and the value factor. 
 The size factor is based on the observation that small-cap stocks tend to exhibit higher returns than large-cap stocks, 
 while the value factor assumes that assets with a high book-to-market ratio outperform ones with a lower ratio.
 
@@ -453,7 +453,7 @@ A \gls{rf} is an ensemble learning method that creates multiple estimators (deci
 \begin{equation}
 L(j, s) = \frac{N_L}{N_t} MSE_L + \frac{N_R}{N_t} MSE_R
 \end{equation}
-where $N_t$ is the number of samples at the current node, and $N_L, N_R$ are the number of samples in the left and right child nodes respectively. $MSE_L$ and $MES_R$ represent the errors of the left and right branch after the split respectively. A single decision tree is prone to overfitting (high variance). A \gls{rf} mitigates this problem with two mechanisms.
+Where $L(j, s)$ represents the loss function for a given feature $j$ and split-point $s$, $N_t$ is the number of samples at the current node, and $N_L, N_R$ are the number of samples in the left and right child nodes respectively. $MSE_L$ and $MES_R$ represent the errors of the left and right branch after the split respectively. A single decision tree is prone to overfitting (high variance). A \gls{rf} mitigates this problem with two mechanisms.
 \begin{itemize}
     \item Bootstrapping: A random subsample of the dataset is drawn with replacement. That means observations can occur in a single tree multiple times and some can be left out
     \item Feature Subsampling: When spliting on a criterion this is also chosen from a randomly subsampled set of all features. 
@@ -462,7 +462,7 @@ The final prediction $\hat{y}$ for an input $x$ is obtained by averaging the pre
 \begin{equation}
 \hat{y} = \frac{1}{M} \sum_{m=1}^{M} h_m(x)
 \end{equation}
-where $h_m(x)$ represents the prediction of the $m$-th individual tree.
+Where $h_m(x)$ represents the prediction of the $m$-th individual tree.
 The ensemble method makes this estimator more robust to outliers and noise, which are especially present in financial time series data. Since predictions are based on the learned splits from the training sets, a \gls{rf} can only interpolate from previously seen values.
     
 
@@ -490,7 +490,7 @@ The input layer represents the input features, a hidden layer consists of multip
   \begin{equation}
       y_i = \sum_{h=1}^{H} v_{ih} z_h + v_{i0}.
   \end{equation}
-  $v_{ih}$ represents the weights of the last hidden layer (from hidden to output) and $v_{i0}$ the bias of the output layer.\cite[pp. 298-299]{Alpaydin2022} This allows the \gls{mlp} to predict continuous values that are not limited by any activation function.
+  $v_{ih}$ represents the weights of the last hidden layer (from hidden to output) and $v_{i0}$ the bias of the output layer \cite[pp. 298-299]{Alpaydin2022}. This allows the \gls{mlp} to predict continuous values that are not limited by any activation function.
 
 \subsection{Transformer Architecture}
 
@@ -537,7 +537,7 @@ For each timestamp $t$, the models are designed to calculate the log-return for 
 % With the 5-minute sampling frequency of the dataset, a specific horizon $h_k \in H$ results in forecasting horizons of 30 minutes, 1 hour, 2 hours and 4 hours respectively.
 
 \section{Global Model Approach}
-The models are implemented as global models, i.e. each model is trained on on the pooled data of all $N$ tickers, where $n \in \{1, \dots, N\}$ represents the individual asset. This allows for a much larger sample size for the training step. This approach also enables the individual models to learn cross-sectional patterns that can be generalized across different assets.
+The models are implemented as global models, i.e. each model is trained on the pooled data of all $N$ tickers, where $n \in \{1, \dots, N\}$ represents the individual asset. This allows for a much larger sample size for the training step. This approach also enables the individual models to learn cross-sectional patterns that can be generalized across different assets.
 
 \section{Target Variable Calculation}
 The target variable  is the multi-period log-return. For each ticker $n$, the log-return  $y_{t,n,h}$ for a horizon $h \in H$ is defined as the difference between the logarithm of the future close price $P_{t+h, n}$ and the close price at the current time $P_{t, n}$:
@@ -573,14 +573,14 @@ A typical trend indicator is the moving average.
 
 
 \paragraph{Oscillators and Momentum Indicators:}
-Momentum measures the velocity of price changes. Osciallators are a sub-group of momentum indicators and are typically set to a fixed range (e. g. 0-100). They are utilized to signal a overbought or oversold condition \cite{wilder1978new}.
+Momentum measures the velocity of price changes. Osciallators are a sub-group of momentum indicators and are typically set to a fixed range (e. g. 0-100). They are utilized to signal an overbought or oversold condition \cite{wilder1978new}.
 A prominent momentum indicator is the Relative Strength Index (RSI).
 
 \paragraph{Volatility-Based Features:}
 Volatility features measure the magnitude of price movements. They indicate how much the price has moved up or down. They measure the volatility and therefore the risk of the underlying asset.
 
 \paragraph{Volume and Liquidity Features:}
-Volume represents the amount of traded shares over a time horizon. It indicates whether a price movements is strong and if it is supported by market activity. It shows the market liquidity and can validate price breakouts. 
+Volume represents the amount of traded shares over a time horizon. It indicates whether a price movement is strong and if it is supported by market activity. It shows the market liquidity and can validate price breakouts. 
 
 \paragraph{Statistical and Temporal Features:}
 These features describe mathematical properties of the return. They are used to represent the Kurtosis of the distribution of returns over a past horizon.
@@ -1483,7 +1483,7 @@ class BaseModel(ABC):
     
     def load_model(self, model_path: Path) -> Any:
         pass
-        
+
 \end{lstlisting}
 
 \addsec{Appendix E: Base Model Interface}
