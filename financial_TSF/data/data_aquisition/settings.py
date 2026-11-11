@@ -6,7 +6,8 @@ from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).resolve().parents[3] / ".env")
 api_key = os.getenv("ALPHAVANTAGE_API_KEY")
-print("Api key: ", api_key)
+if not api_key:
+    print("Warning: ALPHAVANTAGE_API_KEY is not set in .env")
 
 parameters = {
     'interval' : '5min',

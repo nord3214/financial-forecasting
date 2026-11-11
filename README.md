@@ -25,9 +25,9 @@ poetry run pip install torch torchvision
 
 **TA-Lib** requires the native C library to be installed on your system before `poetry install`. It can be possible that it is missing on your system -> see the [TA-Lib installation guide](https://github.com/TA-Lib/ta-lib-python#installation).
 
-**PyPortfolioOpt** Also had trouble installing via poetry so it also has to be manually installed 
+**PyPortfolioOpt** could not be installed reliably via Poetry, so it has to be installed manually:
 
-```
+```bash
 poetry run pip install PyPortfolioOpt
 ```
 
@@ -43,28 +43,27 @@ Results are saved to the `results/` directory with a timestamped subfolder per e
 
 ## Data
 
-The Code repository can also be used for requesting all nasdaq100 ticker data with a valid premium api key. The API key should be set in the .env file. (Code relevant in `financial_TSF\data\data_aquisition\ohlc_data.py`)
+The dataset used in the thesis (5-minute OHLCV data of the Nasdaq-100 constituents from Alpha Vantage) is not included in this repository, because the data provider's terms do not allow redistribution.
 
-Otherwise the used dataset for the bacherlor thesis can be downloaded here: 
-https://cloud.thws.de/f/111295129
+It can be requested again with your own Alpha Vantage API key (a premium key is required for historical intraday data). Set the key in a `.env` file in the project root:
 
+```
+ALPHAVANTAGE_API_KEY=your_key
+```
 
-After downloading the data folder should be copied inside the project root directory. 
-The file structure should then look like this:
+The download code is located in [`financial_TSF/data/data_aquisition/ohlc_data.py`](financial_TSF/data/data_aquisition/ohlc_data.py). The data should then be placed inside the project root directory with the following structure:
 
 ```
 data/
-├── raw/             
-├── concatenated/    
+├── raw/
+├── concatenated/
 ```
-
-
 
 ---
 
 ## Project Structure
 
-![Project Overview](out\UML\architecture\FinancialTSF_Minimal_Architecture.svg)
+![Project Overview](UML/FinancialTSF_Minimal_Architecture.png)
 
 ---
 
@@ -93,6 +92,7 @@ The experiment is executed as a sequential, config-driven pipeline. Each step re
 | `MLP` | Multi-Layer Perceptron (PyTorch) |
 | `PatchTST` | Patch Time Series Transformer (PyTorch) |
 | `Constant` | Constant Predictor |
+| `Naive` | Naive Predictor |
 
 ---
 
@@ -108,11 +108,14 @@ Features are assigned a complexity level in `feature_config.json`. The `complexi
 
 ## Configuration
 
-All experiment parameters are set in [`financial_TSF/config.json`](financial_TSF/config.json):
-
-To Change the the current exeperimental setup it should be enough to make changes inside the [`financial_TSF/config.json`]
-
+All experiment parameters are set in [`financial_TSF/config.json`](financial_TSF/config.json). To change the experimental setup, it should be enough to edit this file.
 
 Each saved result folder contains a copy of both config files for full reproducibility.
+
+---
+
+## License
+
+© 2026 Florian Ullmann. All rights reserved. This applies to the source code and the thesis document. Please contact the author for any reuse.
 
 ---
